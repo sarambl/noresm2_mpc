@@ -46,8 +46,8 @@ CASEROOT=/cluster/home/jonahks/p/jonahks/cases
 
 # Where FORTRAN files contains microphysics modifications are stored
 # May require future subdirectories
-ModSource=/cluster/home/jonahks/sourcemods/wbf_slf
-#ModSource=/cluster/home/jonahks/git_repos/all_cloud_mods
+#ModSource=/cluster/home/jonahks/sourcemods/wbf_slf
+ModSource=/cluster/home/jonahks/git_repos/noresm2_mpc/SourceMods
 
 # Case name, unique, could be configured as an input arg:
 # CASENAME=NF2000climo_reshere_initialtest
@@ -83,7 +83,7 @@ cd ${ModelRoot} # Move to appropriate directory
                  --project ${PROJECT} \
                  $MISC
 
-exit 1
+#exit 1
 
 cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 
@@ -109,14 +109,13 @@ cp ${ModSource}/micro_mg2_0.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 cp ${ModSource}/hetfrz_classnuc_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 
 # Now use ponyfyer to set the values within the sourcemod files. Ex:
-# ponyfyer 'wahooey' 'BUTT' 'pretend_fortran.F90'
 mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90
-#ponyfyer 'wbf_tag' ${wbf} ${mg2_path}
-ponyfyer 'wbf_tag = 1.' ${wbf} ${mgcam_path}
-
-
 nuc_i_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_cam.F90
-ponyfyer 'inp_tag = 1.' ${inp} ${nuc_i_path}
+
+ponyfyer 'wbf_tag = 1.' "wbf_tag = ${wbf}" ${mg2_path}
+ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${nuc_i_path}
+
+#echo ${mg2_path} ${inp2} ${nuc_i_path}
 
 exit 1
 # Will need to set these values in some manner now
