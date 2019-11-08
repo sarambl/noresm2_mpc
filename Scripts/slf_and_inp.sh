@@ -117,7 +117,7 @@ ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${nuc_i_path}
 
 #echo ${mg2_path} ${inp2} ${nuc_i_path}
 
-exit 1
+#exit 1
 # Will need to set these values in some manner now
 
 # Set up case, creating user_nl_* files
@@ -126,8 +126,8 @@ exit 1
 # Will need to modify the nl files appropriately here to choose output
 # CAM adjustments, I don't entirely understand the syntax here, but all the formatting after the first line is totally preserved:
 # list variables to add to first history file here
+#&aerosol_nl  # Not sure what this is.
 cat <<TXT2 >> user_nl_cam
-&aerosol_nl  # Not sure what this is.
 fincl1 = 'BERGO', 'BERGSO', 'SLFXCLD_ISOTM', 'SADLIQXCLD_ISOTM', 'SADICEXCLD_ISOTM', 'BERGOXCLD_ISOTM',
 'BERGSOXCLD_ISOTM', 'CLD_ISOTM', 'CLDTAU', 'CLD_SLF', 'CLD_ISOTM_SLF', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUCCRO'
 TXT2
@@ -136,6 +136,8 @@ exit 1
 
 # build, create *_in files under run/
 ./case.build
+
+exit 1
 
 # Submit the case
 ./case.submit
