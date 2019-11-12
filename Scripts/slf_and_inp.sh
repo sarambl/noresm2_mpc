@@ -34,7 +34,7 @@ inp=${args[2]}          # inp multiplier
 
 models=("noresm-dev" "cesm" "noresm-dev-10072019")
 compsets=("NF2000climo" "N1850OCBDRDDMS")
-resolutions=("f19_tn14")
+resolutions=("f19_tn14", "f10_f10_mg37")
 machines=('fram')
 projects=('nn9600k')
 
@@ -91,8 +91,9 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 #./xmlchange --file=env_run.xml RESUBMIT=3
 ./xmlchange --file=env_run.xml STOP_OPTION=nmonth
 ./xmlchange --file=env_run.xml STOP_N=1
-# ./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:50:00 --subgroup case.run
-#./xmlchange --file=env_run.xml REST_OPTION=nyears
+./xmlchange --file=env_run.xml STOP_N=1
+./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=06:00:00 --subgroup case.run
+# ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
 #./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '-phys cam5'
 
@@ -127,9 +128,10 @@ ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${nuc_i_path}
 # CAM adjustments, I don't entirely understand the syntax here, but all the formatting after the first line is totally preserved:
 # list variables to add to first history file here
 #&aerosol_nl  # Not sure what this is.
+# , 'SLFXCLD_ISOTM', 'SADLIQXCLD_ISOTM', 'SADICEXCLD_ISOTM', 'BERGOXCLD_ISOTM',
+# 'BERGSOXCLD_ISOTM', 'CLD_ISOTM', 'CLDTAU', 'CLD_SLF', 'CLD_ISOTM_SLF',
 cat <<TXT2 >> user_nl_cam
-fincl1 = 'BERGO', 'BERGSO', 'SLFXCLD_ISOTM', 'SADLIQXCLD_ISOTM', 'SADICEXCLD_ISOTM', 'BERGOXCLD_ISOTM',
-'BERGSOXCLD_ISOTM', 'CLD_ISOTM', 'CLDTAU', 'CLD_SLF', 'CLD_ISOTM_SLF', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUCCRO'
+fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUCCDO'
 TXT2
 
 exit 1
