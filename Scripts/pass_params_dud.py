@@ -10,7 +10,7 @@ from datetime import datetime
 day = datetime.now()
 daystamp = day.strftime("/%Y%m%d")
 tstamp = day.strftime("%H%M%S")
-allstamp = day.strftime("%Y%m%d_%H%M%S_")
+allstamp = day.strftime("_%Y%m%d_%H%M%S")
 
 param_set = "sample_param_set.csv"
 
@@ -32,10 +32,10 @@ for i in range(rows):
         # adjust .csv so that the case is not resubmitted:
         data.loc[i,'run'] = 1
         data.to_csv("sample_param_set2.csv", sep='\t')  # This needs to be changed to be the original .csv
-        casename = allstamp + param_set[:-4] + "_" + str(data.loc[i,'casename'])
+        casename = param_set[:-4] + "_" + str(data.loc[i,'casename']) + allstamp
         wbf_arg = 'wbf_tag = ' + str(data.loc[i,'slf_mult']) # probably doesn't work
         inp_arg = 'inp_tag = ' + str(data.loc[i,'inp_mult'])
         str_arg = casename + ' ' + str(data.loc[i,'slf_mult']) + ' ' + str(data.loc[i,'inp_mult'])
         print('submitting: ' + str_arg)
         # os.system('sh print_params.sh ' + str_arg) # call bash script
-        os.system('sh slf_and_inp.sh ' + str_arg) # call bash script
+        os.system('sh slf_and_inp_dud.sh ' + str_arg) # call bash script

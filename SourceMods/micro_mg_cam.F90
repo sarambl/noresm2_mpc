@@ -1341,9 +1341,8 @@ subroutine micro_mg_cam_tend(state, ptend, dtime, pbuf)
 
    ! Local variables
    integer :: ncol, nlev, mgncol
-   integer, allocatable :: mgcols(:) ! Columns with microphysics performed
    integer :: lchnk                  !zsm, jks
-   integer, allocatable :: mgcols(:) ! column indices !zsm, jks
+   integer, allocatable :: mgcols(:) ! Columns with microphysics performed !zsm, jks
    real(r8), allocatable :: mgrlats(:) ! zsm, jks
 
    ! Find the number of levels used in the microphysics.
@@ -2533,7 +2532,6 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, mgr
                  packed_nrtend,          packed_nstend,          &
                  packed_rel,     rel_fn_dum,     packed_rei,     &
                  packed_sadice, packed_sadliq,  packed_sadsnow,  & !zsm, jks
-                 packed_sadice,          packed_sadsnow,         &
                  packed_prect,           packed_preci,           &
                  packed_nevapr,          packed_evapsnow,        &
                  packed_am_evp_st,                               &

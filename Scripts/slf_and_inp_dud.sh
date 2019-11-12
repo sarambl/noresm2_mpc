@@ -99,21 +99,18 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 # Do I need to modify the env_mach_pres.xml file here? How do I do that?
 
 # Move modified WBF process into SourceMods dir:
-cp ${ModSource}/micro_mg_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
-cp ${ModSource}/micro_mg2_0.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+# cp ${ModSource}/micro_mg_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+# cp ${ModSource}/micro_mg2_0.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 
 # Move modified INP nucleation process into SourceMods dir:
-# cp ${ModSource}/microp_aero.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
-#cp ${ModSource}/nucleate_ice_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
-# cp ${ModSource}/nucleate_ice.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
-cp ${ModSource}/hetfrz_classnuc_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+# cp ${ModSource}/hetfrz_classnuc_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 
 # Now use ponyfyer to set the values within the sourcemod files. Ex:
-mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90
-nuc_i_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_cam.F90
+# mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90
+# nuc_i_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_cam.F90
 
-ponyfyer 'wbf_tag = 1.' "wbf_tag = ${wbf}" ${mg2_path}
-ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${nuc_i_path}
+# ponyfyer 'wbf_tag = 1.' "wbf_tag = ${wbf}" ${mg2_path}
+# ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${nuc_i_path}
 
 #echo ${mg2_path} ${inp2} ${nuc_i_path}
 
