@@ -59,6 +59,7 @@ MACH=${machines[0]}
 PROJECT=${projects[0]}
 MISC=--run-unsupported
 
+NUMNODES=-4
 # COMPSET=NF2000climo
 # RES=f19_tn14
 # MACH=fram
@@ -92,10 +93,12 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 ./xmlchange --file=env_run.xml STOP_OPTION=nmonth
 ./xmlchange --file=env_run.xml STOP_N=1
 ./xmlchange --file=env_run.xml STOP_N=1
-./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=06:00:00 --subgroup case.run
+./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:59:00 --subgroup case.run
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
 #./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '-phys cam5'
+./xmlchange --file=env_mach_pes.xml -id NTASKS --val ${NUMNODES}
+./xmlchange --file=env_mach_pes.xml -id NTASKS_ESP --val 1
 
 # Do I need to modify the env_mach_pres.xml file here? How do I do that?
 
@@ -133,7 +136,7 @@ ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${nuc_i_path}
 cat <<TXT2 >> user_nl_cam
 fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUCCDO'
 TXT2
-
+#nhtfrq(1) = -24
 exit 1
 
 # build, create *_in files under run/
