@@ -29,13 +29,17 @@ for i in range(rows):
     row = data.loc[i,:]
     if not row[1]: # Check if the case has already been run
         # print(data)
+        _slf = str(data.loc[i,'slf_mult'])
+        _inp = str(data.loc[i,'inp_mult'])
+        _case = str(data.loc[i,'casename'])
         # adjust .csv so that the case is not resubmitted:
         data.loc[i,'run'] = 1
         data.to_csv("sample_param_set2.csv", sep='\t')  # This needs to be changed to be the original .csv
-        casename = allstamp + param_set[:-4] + "_" + str(data.loc[i,'casename'])
-        wbf_arg = 'wbf_tag = ' + str(data.loc[i,'slf_mult']) # probably doesn't work
-        inp_arg = 'inp_tag = ' + str(data.loc[i,'inp_mult'])
-        str_arg = casename + ' ' + str(data.loc[i,'slf_mult']) + ' ' + str(data.loc[i,'inp_mult'])
+        casename = allstamp + param_set[:-4] + "_" + _case
+        wbf_arg = 'wbf_tag = ' + _slf # probably doesn't work
+        inp_arg = 'inp_tag = ' + _inp
+        str_arg = casename + ' ' + _slf + ' ' + _inp
         print('submitting: ' + str_arg)
-        # os.system('sh print_params.sh ' + str_arg) # call bash script
+
         os.system('sh slf_and_inp.sh ' + str_arg) # call bash script
+    else: print(_case, 'all ready run')

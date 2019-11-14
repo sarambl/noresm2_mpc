@@ -32,7 +32,7 @@ for i in range(rows):
         # adjust .csv so that the case is not resubmitted:
         data.loc[i,'run'] = 1
         data.to_csv("sample_param_set2.csv", sep='\t')  # This needs to be changed to be the original .csv
-        casename = param_set[:-4] + "_" + str(data.loc[i,'casename']) + allstamp
+        casename = allstamp + 'dud' + param_set[:-4] + "_" + str(data.loc[i,'casename'])
         wbf_arg = 'wbf_tag = ' + str(data.loc[i,'slf_mult']) # probably doesn't work
         inp_arg = 'inp_tag = ' + str(data.loc[i,'inp_mult'])
         str_arg = casename + ' ' + str(data.loc[i,'slf_mult']) + ' ' + str(data.loc[i,'inp_mult'])

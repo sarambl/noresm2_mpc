@@ -34,7 +34,7 @@ inp=${args[2]}          # inp multiplier
 
 models=("noresm-dev" "cesm" "noresm-dev-10072019")
 compsets=("NF2000climo" "N1850OCBDRDDMS")
-resolutions=("f19_tn14", "f10_f10_mg37")
+resolutions=("f19_tn14" "f10_f10_mg37")
 machines=('fram')
 projects=('nn9600k')
 
@@ -59,7 +59,7 @@ MACH=${machines[0]}
 PROJECT=${projects[0]}
 MISC=--run-unsupported
 
-NUMNODES=-4
+NUMNODES=-4 # How many nodes each component should run on
 # COMPSET=NF2000climo
 # RES=f19_tn14
 # MACH=fram
@@ -74,8 +74,6 @@ echo ${CASEROOT}/${CASENAME} ${COMPSET} ${RES} ${MACH} ${PROJECT} $MISC
 cd ${ModelRoot} # Move to appropriate directory
 #pwd
 
-#exit 1
-
 # Create env_*.xml files
 ./create_newcase --case ${CASEROOT}/${CASENAME} \
                  --compset ${COMPSET} \
@@ -84,23 +82,20 @@ cd ${ModelRoot} # Move to appropriate directory
                  --project ${PROJECT} \
                  $MISC
 
-#exit 1
-
 cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 
 # Set run time and restart variables within env_run.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
 ./xmlchange --file=env_run.xml STOP_OPTION=nmonth
-./xmlchange --file=env_run.xml STOP_N=1
-./xmlchange --file=env_run.xml STOP_N=1
+./xmlchange --file=env_run.xml STOP_N=2
 ./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:59:00 --subgroup case.run
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
 #./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '-phys cam5'
+
+# Modify the env_mach_pres.xml file here. If NUMTASKS is -4, it should get off the queue faster
 ./xmlchange --file=env_mach_pes.xml -id NTASKS --val ${NUMNODES}
 ./xmlchange --file=env_mach_pes.xml -id NTASKS_ESP --val 1
-
-# Do I need to modify the env_mach_pres.xml file here? How do I do that?
 
 # Move modified WBF process into SourceMods dir:
 cp ${ModSource}/micro_mg_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
@@ -135,8 +130,9 @@ ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${nuc_i_path}
 # 'BERGSOXCLD_ISOTM', 'CLD_ISOTM', 'CLDTAU', 'CLD_SLF', 'CLD_ISOTM_SLF',
 cat <<TXT2 >> user_nl_cam
 fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUCCDO'
+nhtfrq(1) = 0
 TXT2
-#nhtfrq(1) = -24
+
 exit 1
 
 # build, create *_in files under run/
