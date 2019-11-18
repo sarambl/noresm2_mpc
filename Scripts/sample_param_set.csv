@@ -1,6 +1,6 @@
 casename,run,slf_mult,inp_mult
 wbf1_inp1,1.0,1.0,1.0
 wbf1_inp10,1.0,1.0,10.0
-wbf1_inp0_1,0.0,1.0,0.1
-wbf0_01_inp1,0.0,0.01,1.0
-wbf10_inp1,0.0,10.0,1.0
+wbf1_inp0_1,1.0,1.0,0.1
+wbf0_01_inp1,1.0,0.01,1.0
+wbf10_inp1,1.0,10.0,1.0
