@@ -30,8 +30,8 @@ def main(csvfile):
 
             # adjust .csv so that the case is not resubmitted:
             data.loc[i,'run'] = 1
-            data[0:].to_csv(param_set, sep=',', index = False)  # This needs to be changed to be the original .csv
-            casename = allstamp + param_set[:-4] + "_" + _case
+            data[0:].to_csv(csvfile, sep=',', index = False)  # This needs to be changed to be the original .csv
+            casename = allstamp + csvfile[:-4] + "_" + _case
             str_arg = casename + ' ' + _slf + ' ' + _inp
             print('submitting: ' + str_arg)
             os.system('sh slf_and_inp.sh ' + str_arg) # call bash script
