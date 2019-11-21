@@ -3003,6 +3003,8 @@ subroutine micro_mg_tend ( &
            end if
 
            effc(i,k) = (pgam(i,k)+3._r8)/lamc(i,k)/2._r8*1.e6_r8
+           sadliq(i,k) = dumnc(i,k)/gamma(pgam(i,k)+1._r8)*pi*gamma(pgam(i,k)+3._r8)/(4._r8*lamc(i,k)**2._r8) !zsm, jks
+
            !assign output fields for shape here
            lamcrad(i,k)=lamc(i,k)
            pgamrad(i,k)=pgam(i,k)
