@@ -91,8 +91,8 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 # Set run time and restart variables within env_run.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
 ./xmlchange --file=env_run.xml STOP_OPTION=nmonth
-./xmlchange --file=env_run.xml STOP_N=2
-./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:59:00 --subgroup case.run
+./xmlchange --file=env_run.xml STOP_N=15
+./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=06:59:00 --subgroup case.run
 #./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
 #./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '-phys cam5'
