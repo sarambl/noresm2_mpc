@@ -1,2 +1,3 @@
 casename,run,slf_mult,inp_mult
-wbf1_inp1,1.0,8.3,5.2
+verbose_inp10,1.0,1.0,10.0
+verbose_inp1,1.0,1.0,1.0

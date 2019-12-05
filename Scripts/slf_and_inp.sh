@@ -87,8 +87,8 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 # Set run time and restart variables within env_run.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
 ./xmlchange --file=env_run.xml STOP_OPTION=nmonth
-./xmlchange --file=env_run.xml STOP_N=15
-./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=06:59:00 --subgroup case.run
+./xmlchange --file=env_run.xml STOP_N=1
+./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:59:00 --subgroup case.run
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
 #./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '-phys cam5'
@@ -128,17 +128,24 @@ ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${nuc_i_path}
 #&aerosol_nl  # Not sure what this is.
 # , 'SLFXCLD_ISOTM', 'SADLIQXCLD_ISOTM', 'SADICEXCLD_ISOTM', 'BERGOXCLD_ISOTM',
 # 'BERGSOXCLD_ISOTM', 'CLD_ISOTM', 'CLDTAU', 'CLD_SLF', 'CLD_ISOTM_SLF',
+
 cat <<TXT2 >> user_nl_cam
 fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUCCDO'
+         'DSTFREZIMM', 'DSTFREZCNT', 'DSTFREZDEP', 'BCFREZIMM', 'BCFREZCNT', 'BCFREZDEP',
+         'NUMICE10s', 'NUMICE10sDST', 'NUMICE10sBC',
+         'dc_num', 'dst1_num', 'dst3_num', 'bc_c1_num', 'dst_c1_num', 'dst_c3_num'
+
+use_hetfrz_classnuc = .true.
 TXT2
+
 #nhtfrq(1) = 0
 
-# exit 1
+exit 1
 
 # build, create *_in files under run/
 ./case.build
 
-exit 1
+#exit 1
 
 # Submit the case
 ./case.submit
