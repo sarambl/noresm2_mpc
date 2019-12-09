@@ -38,7 +38,7 @@ resolutions=("f19_tn14" "f10_f10_mg37")
 machines=('fram')
 projects=('nn9600k')
 
-# Where ./create_case is called from:
+# Where ./create_case is called from: (do I need a tilde here for simplicity?)
 ModelRoot=/cluster/home/jonahks/p/jonahks/models/${models[0]}/cime/scripts
 
 # Where the case it setup, and user_nl files are stored
@@ -107,6 +107,7 @@ cp ${ModSource}/micro_mg2_0.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 # cp ${ModSource}/nucleate_ice.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 # cp ${ModSource}/hetfrz_classnuc_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 cp ${ModSource}/hetfrz_classnuc_oslo.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+cp ${ModSource}/microp_aero.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 
 # Now use ponyfyer to set the values within the sourcemod files. Ex:
 mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90
@@ -119,7 +120,7 @@ ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${inp_path}
 
 #echo ${mg2_path} ${inp2} ${nuc_i_path}
 
-#exit 1
+# exit 1
 # Will need to set these values in some manner now
 
 # Set up case, creating user_nl_* files
@@ -137,8 +138,6 @@ fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUC
          'DSTFREZIMM', 'DSTFREZCNT', 'DSTFREZDEP', 'BCFREZIMM', 'BCFREZCNT', 'BCFREZDEP',
          'NUMICE10s', 'NUMICE10sDST', 'NUMICE10sBC',
          'dc_num', 'dst1_num', 'dst3_num', 'bc_c1_num', 'dst_c1_num', 'dst_c3_num'
-
-use_hetfrz_classnuc = .true.
 TXT2
 
 #nhtfrq(1) = 0

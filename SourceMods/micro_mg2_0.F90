@@ -355,7 +355,7 @@ end subroutine micro_mg_init
 
 subroutine micro_mg_tend ( &
      mgncol,             nlev,               deltatin,           &
-     mgrlats,                                                    & ! jks 111119
+     mgrlats,                                                    & ! zsm, jks 111119
      t,                            q,                            &
      qcn,                          qin,                          &
      ncn,                          nin,                          &
@@ -3291,7 +3291,7 @@ end subroutine calc_rercld
 !UTILITIES
 !========================================================================
 
-subroutine micro_mg_get_cols(lchnk, ncol, nlev, top_lev, qcn, qin, & ! jks
+subroutine micro_mg_get_cols(lchnk, ncol, nlev, top_lev, qcn, qin, & ! zsm, jks
      qrn, qsn, mgncol, mgcols, mgrlats) !jks
 ! jks 111119, added lchnk as input and mgrlats as output, may revisit later
 

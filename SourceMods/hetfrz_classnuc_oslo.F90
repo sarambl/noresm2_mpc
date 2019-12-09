@@ -351,7 +351,8 @@ subroutine hetfrz_classnuc_oslo_calc( &
    state, deltatin, factnum, pbuf    &
    ,numberConcentration, volumeConcentration &
    ,f_acm, f_bcm, f_aqm, f_so4_condm, f_soam &
-   ,hygroscopicity, lnsigma, cam, volumeCore, volumeCoat)
+   ,hygroscopicity, lnsigma, cam, volumeCore, volumeCoat)  ! jks 120719 passing int for rlats call
+   ! ,hygroscopicity, lnsigma, cam, volumeCore, volumeCoat, ncol, lchnk)  ! jks 120719 passing int for rlats call
 
    use commondefinitions, only:  nmodes_oslo => nmodes
    use modal_aero_data, only : qqcw_get_field
@@ -376,6 +377,10 @@ subroutine hetfrz_classnuc_oslo_calc( &
    real(r8),intent(in) :: cam(pcols,pver,nmodes_oslo)
    real(r8),intent(in) :: volumeCore(pcols,pver,nmodes_oslo)
    real(r8),intent(in) :: volumeCoat(pcols,pver,nmodes_oslo)
+
+
+   ! integer,intent(in) :: ncol !jks 120719 chunk identifier
+   ! integer,intent(in) :: lchnk !jks 120719 number of atmospheric columns
 
    type(physics_buffer_desc),   pointer       :: pbuf(:)
  
@@ -439,14 +444,18 @@ subroutine hetfrz_classnuc_oslo_calc( &
    real(r8) :: tot_na500(pcols,pver)
 
    ! perhaps need to declare rlats object  ! jks
-   real(r8), allocatable :: rlats(:)  ! jks, define as an allocatable because the size ncol is not defined yet
+   ! real(r8), allocatable :: rlats(ncol)  ! jks, define as an allocatable because the size ncol is not defined yet
+   real(r8)              :: rlats(pcols)  ! jks, define as an allocatable because the size ncol is not defined yet
    real(r8)              :: inp_mult  ! jks I think that we just need a single float to do the job here
    real(r8)              :: inp_tag   ! jks I think that we just need a single float to do the job here
+   ! integer               :: ncol_fake, lchnk_fake ! jks add fake ncol and lchnk variables for get_rlats
 
    character(128) :: errstring   ! Error status
 
    integer :: n, m, kk 
    !-------------------------------------------------------------------------------
+
+   ! call get_rlat_all_p(lchnk, ncol, rlats) ! jks 191104, get rlats array
 
    associate( &
       lchnk => state%lchnk,             &
@@ -457,6 +466,11 @@ subroutine hetfrz_classnuc_oslo_calc( &
       pmid  => state%pmid               )
 
    call get_rlat_all_p(lchnk, ncol, rlats) ! jks 191104, get rlats array
+
+   ! ncol_fake  = state%ncol                !jks, 120719. Trying to solve an error with get_rlat_all_p
+   ! lchnk_fake = state%lchnk               !zsm, jks
+
+   ! call get_rlat_all_p(lchnk_fake, ncol_fake, rlats) ! jks 191104, get rlats array
    inp_tag = 1._r8 ! jks 191104 this string is to be picked out and replaced with a [0,1] r8
    
    itim_old = pbuf_old_tim_idx()
@@ -513,11 +527,12 @@ subroutine hetfrz_classnuc_oslo_calc( &
    do i = 1, ncol
       ! jks calculate whether the latitude is high enough here? It is the first iteration over ncol
       ! Arctic specific modification of the dust nuclei number ! jks 061119
-      if (rlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then
-         inp_mult = inp_tag
-      else
-         inp_mult = 1.0_r8
-      end if
+      inp_mult = 1.0_r8
+      if (rlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) inp_mult=inp_tag
+      ! else
+      !    inp_mult = 1.0_r8
+      ! end if
+      ! inp_mult = inp_tag
 
       do k = top_lev, pver
          call get_aer_num(numberConcentration(i,k,:), CloudnumberConcentration(i,k,:), rho(i,k),         &    
@@ -528,6 +543,7 @@ subroutine hetfrz_classnuc_oslo_calc( &
                      total_interstitial_aer_num(i,k,:), total_cloudborne_aer_num(i,k,:),    &    
                      hetraer(i,k,:), awcam(i,k,:), awfacm(i,k,:), dstcoat(i,k,:),           &    
                      na500(i,k), tot_na500(i,k), inp_mult) ! jks 061119 pass inp multiplier
+                     ! na500(i,k), tot_na500(i,k), ncol, lchnk) ! jks 061119 pass inp multiplier
 
          fn_cloudborne_aer_num(i,k,1) = total_aer_num(i,k,1)*factnum(i,k,MODE_IDX_OMBC_INTMIX_COAT_AIT)  ! bc
          fn_cloudborne_aer_num(i,k,2) = total_aer_num(i,k,2)*factnum(i,k,MODE_IDX_DST_A2) 
@@ -748,7 +764,8 @@ subroutine get_aer_num(qaerpt, qaercwpt, rhoair,           &   ! input
                        total_interstial_aer_num,           &
                        total_cloudborne_aer_num,           &
                        hetraer, awcam, awfacm, dstcoat,    &
-                       na500, tot_na500, inp_mult) ! jks 061119
+                       na500, tot_na500, inp_mult) ! jks 071219
+                     !   na500, tot_na500, ncol, lchnk) ! jks 071219
 
 !++ wy4.0
 !-- wy4.0
@@ -779,6 +796,8 @@ subroutine get_aer_num(qaerpt, qaercwpt, rhoair,           &   ! input
     real(r8) :: sigmag_amode(3)
     
     real(r8), intent(in) :: inp_mult                 ! aerosol particle multiplier jks 061119
+   !  real(r8),           :: inp_mult                 ! aerosol particle multiplier jks 061119
+   !  integer, intent(in) :: ncol, lchnk                 ! ints from the state obj jks 061119
    
     
     ! output
@@ -814,6 +833,11 @@ subroutine get_aer_num(qaerpt, qaercwpt, rhoair,           &   ! input
     num_bc_idx = MODE_IDX_OMBC_INTMIX_COAT_AIT
     num_dst1_idx = MODE_IDX_DST_A2
     num_dst3_idx = MODE_IDX_DST_A3
+
+   !  call get_rlat_all_p(lchnk, ncol, rlats) ! jks 191104, get rlats array
+
+   !  inp_mult=1.0_r8
+   !  if (rlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) inp_mult=10.0_r8 ! jks this wont work, no way to index by col
 
 
 !*****************************************************************************
@@ -923,13 +947,13 @@ subroutine get_aer_num(qaerpt, qaercwpt, rhoair,           &   ! input
 !                prepare output
 !*****************************************************************************
 
-    total_interstial_aer_num(1) = bc_num * inp_mult ! jks adjust all aerosol numbers
-    total_interstial_aer_num(2) = dst1_num * inp_mult ! jks
-    total_interstial_aer_num(3) = dst3_num * inp_mult ! jks
+    total_interstial_aer_num(1) = bc_num*inp_mult ! jks adjust all aerosol numbers
+    total_interstial_aer_num(2) = dst1_num*inp_mult ! jks
+    total_interstial_aer_num(3) = dst3_num*inp_mult ! jks
  
-    total_cloudborne_aer_num(1) = bc_num_imm * inp_mult ! jks
-    total_cloudborne_aer_num(2) = dst1_num_imm * inp_mult ! jks
-    total_cloudborne_aer_num(3) = dst3_num_imm * inp_mult ! jks
+    total_cloudborne_aer_num(1) = bc_num_imm*inp_mult ! jks
+    total_cloudborne_aer_num(2) = dst1_num_imm*inp_mult ! jks
+    total_cloudborne_aer_num(3) = dst3_num_imm*inp_mult ! jks
    
     do i = 1, 3
         total_aer_num(i) = total_interstial_aer_num(i)+total_cloudborne_aer_num(i)
