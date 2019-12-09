@@ -107,7 +107,7 @@ cp ${ModSource}/micro_mg2_0.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 # cp ${ModSource}/nucleate_ice.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 # cp ${ModSource}/hetfrz_classnuc_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 cp ${ModSource}/hetfrz_classnuc_oslo.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
-cp ${ModSource}/microp_aero.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+# cp ${ModSource}/microp_aero.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 
 # Now use ponyfyer to set the values within the sourcemod files. Ex:
 mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90

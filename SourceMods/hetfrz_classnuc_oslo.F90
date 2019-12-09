@@ -203,6 +203,9 @@ subroutine hetfrz_classnuc_oslo_init(mincld_in)
    call addfld('bc_num',        (/ 'lev' /), 'A', '#/cm3', 'total bc number')
    call addfld('dst1_num',      (/ 'lev' /), 'A', '#/cm3', 'total dst1 number')
    call addfld('dst3_num',      (/ 'lev' /), 'A', '#/cm3', 'total dst3 number')
+   call addfld('bc_num_scaled',        (/ 'lev' /), 'A', '#/cm3', 'total bc number scaled by inp_mult') ! jks
+   call addfld('dst1_num_scaled',      (/ 'lev' /), 'A', '#/cm3', 'total dst1 number scaled by inp_mult') ! jks
+   call addfld('dst3_num_scaled',      (/ 'lev' /), 'A', '#/cm3', 'total dst3 number scaled by inp_mult') !jks
    call addfld('bcc_num',       (/ 'lev' /), 'A', '#/cm3', 'coated bc number')
    call addfld('dst1c_num',     (/ 'lev' /), 'A', '#/cm3', 'coated dst1 number')
    call addfld('dst3c_num',     (/ 'lev' /), 'A', '#/cm3', 'coated dst3 number')
@@ -270,6 +273,9 @@ subroutine hetfrz_classnuc_oslo_init(mincld_in)
       call add_default('bc_num', 1, ' ')
       call add_default('dst1_num', 1, ' ')
       call add_default('dst3_num', 1, ' ')
+      call add_default('bc_num_scaled', 1, ' ') !jks, make sure these field are included to verify
+      call add_default('dst1_num_scaled', 1, ' ') !jks
+      call add_default('dst3_num_scaled', 1, ' ') !jks
       call add_default('bcc_num', 1, ' ')
       call add_default('dst1c_num', 1, ' ')
       call add_default('dst3c_num', 1, ' ')
@@ -351,7 +357,7 @@ subroutine hetfrz_classnuc_oslo_calc( &
    state, deltatin, factnum, pbuf    &
    ,numberConcentration, volumeConcentration &
    ,f_acm, f_bcm, f_aqm, f_so4_condm, f_soam &
-   ,hygroscopicity, lnsigma, cam, volumeCore, volumeCoat)  ! jks 120719 passing int for rlats call
+   ,hygroscopicity, lnsigma, cam, volumeCore, volumeCoat)
    ! ,hygroscopicity, lnsigma, cam, volumeCore, volumeCoat, ncol, lchnk)  ! jks 120719 passing int for rlats call
 
    use commondefinitions, only:  nmodes_oslo => nmodes
@@ -378,9 +384,6 @@ subroutine hetfrz_classnuc_oslo_calc( &
    real(r8),intent(in) :: volumeCore(pcols,pver,nmodes_oslo)
    real(r8),intent(in) :: volumeCoat(pcols,pver,nmodes_oslo)
 
-
-   ! integer,intent(in) :: ncol !jks 120719 chunk identifier
-   ! integer,intent(in) :: lchnk !jks 120719 number of atmospheric columns
 
    type(physics_buffer_desc),   pointer       :: pbuf(:)
  
@@ -411,7 +414,14 @@ subroutine hetfrz_classnuc_oslo_calc( &
    real(r8) :: total_cloudborne_aer_num(pcols,pver,3)
    real(r8) :: total_aer_num(pcols,pver,3)
    real(r8) :: coated_aer_num(pcols,pver,3)
-   real(r8) :: uncoated_aer_num(pcols,pver,3)
+   real(r8) :: uncoated_aer_num(pcols,pver,3)   
+   
+   ! jks adding dummy variables for hetfrz_classnuc_calc
+   real(r8) :: total_interstitial_aer_num_scaled(pcols,pver,3)
+   real(r8) :: total_cloudborne_aer_num_scaled(pcols,pver,3)
+   real(r8) :: total_aer_num_scaled(pcols,pver,3)
+   real(r8) :: coated_aer_num_scaled(pcols,pver,3)
+   real(r8) :: uncoated_aer_num_scaled(pcols,pver,3)
 
    real(r8) :: fn_cloudborne_aer_num(pcols,pver,3)
 
@@ -445,17 +455,15 @@ subroutine hetfrz_classnuc_oslo_calc( &
 
    ! perhaps need to declare rlats object  ! jks
    ! real(r8), allocatable :: rlats(ncol)  ! jks, define as an allocatable because the size ncol is not defined yet
-   real(r8)              :: rlats(pcols)  ! jks, define as an allocatable because the size ncol is not defined yet
+   ! real(r8)              :: rlats(pcols)  ! jks, define as an allocatable because the size ncol is not defined yet
+   real(r8), allocatable :: rlats(:)  ! jks, define as an allocatable because the size ncol is not defined yet
    real(r8)              :: inp_mult  ! jks I think that we just need a single float to do the job here
    real(r8)              :: inp_tag   ! jks I think that we just need a single float to do the job here
-   ! integer               :: ncol_fake, lchnk_fake ! jks add fake ncol and lchnk variables for get_rlats
 
    character(128) :: errstring   ! Error status
 
    integer :: n, m, kk 
    !-------------------------------------------------------------------------------
-
-   ! call get_rlat_all_p(lchnk, ncol, rlats) ! jks 191104, get rlats array
 
    associate( &
       lchnk => state%lchnk,             &
@@ -465,12 +473,9 @@ subroutine hetfrz_classnuc_oslo_calc( &
       nc    => state%q(:pcols,:pver,numliq_idx), &
       pmid  => state%pmid               )
 
+   allocate(rlats(ncol)) ! jks, must allocate before referencing because rlats object has no location
    call get_rlat_all_p(lchnk, ncol, rlats) ! jks 191104, get rlats array
 
-   ! ncol_fake  = state%ncol                !jks, 120719. Trying to solve an error with get_rlat_all_p
-   ! lchnk_fake = state%lchnk               !zsm, jks
-
-   ! call get_rlat_all_p(lchnk_fake, ncol_fake, rlats) ! jks 191104, get rlats array
    inp_tag = 1._r8 ! jks 191104 this string is to be picked out and replaced with a [0,1] r8
    
    itim_old = pbuf_old_tim_idx()
@@ -542,8 +547,16 @@ subroutine hetfrz_classnuc_oslo_calc( &
                      total_aer_num(i,k,:), coated_aer_num(i,k,:), uncoated_aer_num(i,k,:),  &
                      total_interstitial_aer_num(i,k,:), total_cloudborne_aer_num(i,k,:),    &    
                      hetraer(i,k,:), awcam(i,k,:), awfacm(i,k,:), dstcoat(i,k,:),           &    
-                     na500(i,k), tot_na500(i,k), inp_mult) ! jks 061119 pass inp multiplier
+                     na500(i,k), tot_na500(i,k)) ! jks 061119 pass inp multiplier
+                     ! na500(i,k), tot_na500(i,k), inp_mult) ! jks 061119 pass inp multiplier
                      ! na500(i,k), tot_na500(i,k), ncol, lchnk) ! jks 061119 pass inp multiplier
+
+         ! jks set new variables here
+         total_aer_num_scaled(i,k,:) = total_aer_num(i,k,:) * inp_mult
+         coated_aer_num_scaled(i,k,:) = coated_aer_num(i,k,:) * inp_mult
+         uncoated_aer_num_scaled(i,k,:) = uncoated_aer_num(i,k,:) * inp_mult
+         total_interstitial_aer_num_scaled(i,k,:) = total_interstitial_aer_num(i,k,:) *inp_mult
+         total_cloudborne_aer_num_scaled(i,k,:) = total_cloudborne_aer_num(i,k,:) * inp_mult
 
          fn_cloudborne_aer_num(i,k,1) = total_aer_num(i,k,1)*factnum(i,k,MODE_IDX_OMBC_INTMIX_COAT_AIT)  ! bc
          fn_cloudborne_aer_num(i,k,2) = total_aer_num(i,k,2)*factnum(i,k,MODE_IDX_DST_A2) 
@@ -554,6 +567,11 @@ subroutine hetfrz_classnuc_oslo_calc( &
    call outfld('bc_num',        total_aer_num(:,:,1),    pcols, lchnk)
    call outfld('dst1_num',      total_aer_num(:,:,2),    pcols, lchnk)
    call outfld('dst3_num',      total_aer_num(:,:,3),    pcols, lchnk)
+
+   ! create variables so that the scaling can be checked 120919
+   call outfld('bc_num_scaled',        total_aer_num_scaled(:,:,1),    pcols, lchnk)
+   call outfld('dst1_num_scaled',      total_aer_num_scaled(:,:,2),    pcols, lchnk)
+   call outfld('dst3_num_scaled',      total_aer_num_scaled(:,:,3),    pcols, lchnk)
 
    call outfld('bcc_num',       coated_aer_num(:,:,1),   pcols, lchnk)
    call outfld('dst1c_num',     coated_aer_num(:,:,2),   pcols, lchnk)
@@ -620,6 +638,15 @@ subroutine hetfrz_classnuc_oslo_calc( &
    nidep_dst(:,:) = 0._r8
 
    do i = 1, ncol
+      ! jks. alternate, less intrusive inp scaling 120919
+      ! inp_mult = 1.0_r8
+      ! if (rlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then !inp_mult=inp_tag
+      !    total_aer_num(i,k,:) = total_aer_num(i,k,:) * inp_tag 
+      !    coated_aer_num(i,k,:) = coated_aer_num(i,k,:) * inp_tag 
+      !    uncoated_aer_num(i,k,:) = uncoated_aer_num(i,k,:) * inp_tag 
+      !    total_interstitial_aer_num(i,k,:) = total_interstitial_aer_num(i,k,:) * inp_tag 
+      !    total_cloudborne_aer_num(i,k,:) = total_cloudborne_aer_num(i,k,:) * inp_tag 
+
       do k = top_lev, pver
 
          if (t(i,k) > 235.15_r8 .and. t(i,k) < 269.15_r8) then
@@ -634,13 +661,22 @@ subroutine hetfrz_classnuc_oslo_calc( &
             fn(2) = factnum(i,k,MODE_IDX_DST_A2)  ! dust_a1 accumulation mode
             fn(3) = factnum(i,k,MODE_IDX_DST_A3) ! dust_a3 coarse mode
 
+            ! jks. Setting the scaled aerosol numbers as arguments instead of the originals
+            ! call hetfrz_classnuc_calc( &
+            !    deltatin,  t(i,k),  pmid(i,k),  supersatice,   &
+            !    fn,  r3lx,  ncic*rho(i,k)*1.0e-6_r8,  frzbcimm(i,k),  frzduimm(i,k),   &
+            !    frzbccnt(i,k),  frzducnt(i,k),  frzbcdep(i,k),  frzdudep(i,k),  hetraer(i,k,:), &
+            !    awcam(i,k,:), awfacm(i,k,:), dstcoat(i,k,:), total_aer_num(i,k,:),  &
+            !    coated_aer_num(i,k,:), uncoated_aer_num(i,k,:), total_interstitial_aer_num(i,k,:), &
+            !    total_cloudborne_aer_num(i,k,:), errstring)
+
             call hetfrz_classnuc_calc( &
                deltatin,  t(i,k),  pmid(i,k),  supersatice,   &
                fn,  r3lx,  ncic*rho(i,k)*1.0e-6_r8,  frzbcimm(i,k),  frzduimm(i,k),   &
                frzbccnt(i,k),  frzducnt(i,k),  frzbcdep(i,k),  frzdudep(i,k),  hetraer(i,k,:), &
-               awcam(i,k,:), awfacm(i,k,:), dstcoat(i,k,:), total_aer_num(i,k,:),  &
-               coated_aer_num(i,k,:), uncoated_aer_num(i,k,:), total_interstitial_aer_num(i,k,:), &
-               total_cloudborne_aer_num(i,k,:), errstring)
+               awcam(i,k,:), awfacm(i,k,:), dstcoat(i,k,:), total_aer_num_scaled(i,k,:),  &
+               coated_aer_num_scaled(i,k,:), uncoated_aer_num_scaled(i,k,:), total_interstitial_aer_num_scaled(i,k,:), &
+               total_cloudborne_aer_num_scaled(i,k,:), errstring)
 
             call handle_errmsg(errstring, subname="hetfrz_classnuc_calc")
 
@@ -764,7 +800,8 @@ subroutine get_aer_num(qaerpt, qaercwpt, rhoair,           &   ! input
                        total_interstial_aer_num,           &
                        total_cloudborne_aer_num,           &
                        hetraer, awcam, awfacm, dstcoat,    &
-                       na500, tot_na500, inp_mult) ! jks 071219
+                       na500, tot_na500)
+                     !   na500, tot_na500, inp_mult) ! jks 071219
                      !   na500, tot_na500, ncol, lchnk) ! jks 071219
 
 !++ wy4.0
@@ -795,7 +832,7 @@ subroutine get_aer_num(qaerpt, qaercwpt, rhoair,           &   ! input
     real(r8), intent(in) :: volumeCore(nmodes_oslo)
     real(r8) :: sigmag_amode(3)
     
-    real(r8), intent(in) :: inp_mult                 ! aerosol particle multiplier jks 061119
+   !  real(r8), intent(in) :: inp_mult                 ! aerosol particle multiplier jks 061119
    !  real(r8),           :: inp_mult                 ! aerosol particle multiplier jks 061119
    !  integer, intent(in) :: ncol, lchnk                 ! ints from the state obj jks 061119
    
@@ -947,13 +984,21 @@ subroutine get_aer_num(qaerpt, qaercwpt, rhoair,           &   ! input
 !                prepare output
 !*****************************************************************************
 
-    total_interstial_aer_num(1) = bc_num*inp_mult ! jks adjust all aerosol numbers
-    total_interstial_aer_num(2) = dst1_num*inp_mult ! jks
-    total_interstial_aer_num(3) = dst3_num*inp_mult ! jks
+    total_interstial_aer_num(1) = bc_num
+    total_interstial_aer_num(2) = dst1_num
+    total_interstial_aer_num(3) = dst3_num
  
-    total_cloudborne_aer_num(1) = bc_num_imm*inp_mult ! jks
-    total_cloudborne_aer_num(2) = dst1_num_imm*inp_mult ! jks
-    total_cloudborne_aer_num(3) = dst3_num_imm*inp_mult ! jks
+    total_cloudborne_aer_num(1) = bc_num_imm
+    total_cloudborne_aer_num(2) = dst1_num_imm
+    total_cloudborne_aer_num(3) = dst3_num_imm
+
+   !  total_interstial_aer_num(1) = bc_num*inp_mult ! jks adjust all aerosol numbers
+   !  total_interstial_aer_num(2) = dst1_num*inp_mult ! jks
+   !  total_interstial_aer_num(3) = dst3_num*inp_mult ! jks
+ 
+   !  total_cloudborne_aer_num(1) = bc_num_imm*inp_mult ! jks
+   !  total_cloudborne_aer_num(2) = dst1_num_imm*inp_mult ! jks
+   !  total_cloudborne_aer_num(3) = dst3_num_imm*inp_mult ! jks
    
     do i = 1, 3
         total_aer_num(i) = total_interstial_aer_num(i)+total_cloudborne_aer_num(i)
