@@ -87,7 +87,7 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 # Set run time and restart variables within env_run.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
 ./xmlchange --file=env_run.xml STOP_OPTION=nmonth
-./xmlchange --file=env_run.xml STOP_N=1
+./xmlchange --file=env_run.xml STOP_N=2
 ./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:59:00 --subgroup case.run
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
@@ -137,7 +137,8 @@ cat <<TXT2 >> user_nl_cam
 fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUCCDO'
          'DSTFREZIMM', 'DSTFREZCNT', 'DSTFREZDEP', 'BCFREZIMM', 'BCFREZCNT', 'BCFREZDEP',
          'NUMICE10s', 'NUMICE10sDST', 'NUMICE10sBC',
-         'dc_num', 'dst1_num', 'dst3_num', 'bc_c1_num', 'dst_c1_num', 'dst_c3_num'
+         'dc_num', 'dst1_num', 'dst3_num', 'bc_c1_num', 'dst_c1_num', 'dst_c3_num',
+         'bc_num_scaled', 'dst1_num_scaled', 'dst3_num_scaled' 
 TXT2
 
 #nhtfrq(1) = 0
@@ -147,7 +148,7 @@ exit 1
 # build, create *_in files under run/
 ./case.build
 
-#exit 1
+exit 1
 
 # Submit the case
 ./case.submit

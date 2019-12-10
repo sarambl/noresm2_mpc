@@ -24,15 +24,18 @@ def main(csvfile):
         row = data.loc[i,:]
         print(row)
         if not row[1]: # Check if the case has already been run
-            _slf = str(data.loc[i,'slf_mult'])
-            _inp = str(data.loc[i,'inp_mult'])
+            _wbf = str(data.loc[i,'wbf_mult']) # removing the extra zero, bad fix
+            _inp = str(data.loc[i,'inp_mult']) 
+            if _wbf[-1] == '0': _wbf = _wbf[:-1] # removing the extra zero
+            if _inp[-1] == '0': _inp = _inp[:-1]
             _case = str(data.loc[i,'casename'])
 
+            print(_wbf, _inp)
             # adjust .csv so that the case is not resubmitted:
             data.loc[i,'run'] = 1
             data[0:].to_csv(csvfile, sep=',', index = False)  # This needs to be changed to be the original .csv
             casename = allstamp + csvfile[:-4] + "_" + _case
-            str_arg = casename + ' ' + _slf + ' ' + _inp
+            str_arg = casename + ' ' + _wbf + ' ' + _inp
             print('submitting: ' + str_arg)
             os.system('sh slf_and_inp.sh ' + str_arg) # call bash script
         else: print('all ready run')
