@@ -837,6 +837,10 @@ subroutine micro_mg_cam_init(pbuf2d)
    call addfld ('BERGSOXCLD_ISOTM',     (/'isotherms_mpc'/), 'A', ' ', 'Mean BERGSO near isotherm * CLD_ISOTM (discard below thick cloud)'                      )
    call addfld ('CLD_ISOTM' ,           (/'isotherms_mpc'/), 'A', ' ', 'Total cloud fraction near isotherm (discard below thick cloud)'                         )
 
+   call addfld ('CT_SLF',                  (/'isotherms_mpc'/), 'A', ' ', 'Mean cloudtop supercooled liquid fraction near isotherm (discard below thick cloud)' ) ! jks
+   call addfld ('CT_SLFXCLD_ISOTM',        (/'isotherms_mpc'/), 'A', ' ', 'Mean cloudtop supercooled liquid fraction near isotherm * CLD_ISOTM (discard below thick cloud)' ) ! jks
+   call addfld ('CT_CLD_ISOTM' ,           (/'isotherms_mpc'/), 'A', ' ', 'Total cloudtop cloud fraction near isotherm (discard below thick cloud)'                         ) ! jks
+
    call addfld ('SLFXCLD_ISOTM_NONSIM',        (/'isotherms_mpc'/), 'A', ' ', 'Mean supercooled liquid fraction near isotherm * CLD_ISOTM_NONSIM' )
    call addfld ('SADLIQXCLD_ISOTM_NONSIM',     (/'isotherms_mpc'/), 'A', ' ', 'Mean droplet surface area density near isotherm * CLD_ISOTM_NONSIM')
    call addfld ('SADICEXCLD_ISOTM_NONSIM',     (/'isotherms_mpc'/), 'A', ' ', 'Mean ice surface area density near isotherm * CLD_ISOTM_NONSIM'    )
@@ -1229,6 +1233,10 @@ subroutine micro_mg_cam_init(pbuf2d)
    call add_default ('BERGSOXCLD_ISOTM',     1, ' ')
    call add_default ('CLD_ISOTM',            1, ' ')
 
+   call add_default ('CT_SLF',                  1, ' ')
+   call add_default ('CT_SLFXCLD_ISOTM',        1, ' ')
+   call add_default ('CT_CLD_ISOTM',            1, ' ')
+
    call add_default ('SLFXCLD_ISOTM_NONSIM',        1, ' ')
    call add_default ('SADLIQXCLD_ISOTM_NONSIM',     1, ' ')
    call add_default ('SADICEXCLD_ISOTM_NONSIM',     1, ' ')
@@ -1439,6 +1447,10 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, mgr
    real(r8) :: bergsoxcld_isotm(pcols,nisotherms_mpc)
    real(r8) :: cld_isotm(pcols,nisotherms_mpc)
 
+   real(r8) :: ct_slf(pcols,nisotherms_mpc) ! jks
+   real(r8) :: ct_slfxcld_isotm(pcols,nisotherms_mpc) ! jks
+   real(r8) :: ct_cld_isotm(pcols,nisotherms_mpc) ! jks
+
    real(r8) :: slfxcld_isotm_nonsim(pcols,nisotherms_mpc)
    real(r8) :: sadliqxcld_isotm_nonsim(pcols,nisotherms_mpc)
    real(r8) :: sadicexcld_isotm_nonsim(pcols,nisotherms_mpc)
@@ -1462,6 +1474,7 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, mgr
    real(r8) :: cldtau(pcols,pver)
    real(r8) :: wgt
    logical :: calioptest(pcols)
+   logical :: cloudtoptest ! jks cloudtop boolean
    real(r8), parameter :: abarl = 2.817e-02_r8 ! A coefficient for extinction optical depth
    real(r8), parameter :: bbarl = 1.305_r8 ! b coefficient for extinction optical depth
    real(r8), parameter :: abari = 3.448e-03_r8 ! A coefficient for extinction optical depth
@@ -3340,6 +3353,10 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, mgr
    bergsoxcld_isotm                  = 0._r8
    cld_isotm                         = 0._r8
 
+   ct_slf                            = 0._r8 ! jks, shouldn't it be initialized with nans?
+   ct_slfxcld_isotm                  = 0._r8 ! jks
+   ct_cld_isotm                      = 0._r8 ! jks
+
    slfxcld_isotm_nonsim              = 0._r8
    sadliqxcld_isotm_nonsim           = 0._r8
    sadicexcld_isotm_nonsim           = 0._r8
@@ -3434,6 +3451,35 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, mgr
      endif ! cld fract and mr conditional
     enddo ! i, k loops
    enddo ! i, k loops
+
+!##############################
+!## Cloudtop SLF Calculation ## ! jks 121919
+!##############################
+! to-do: declare output variables cloudtopslf and cloudtopCLD_isotm and parameter cloudtoptest 
+
+   do i=1,ncol ! grid box iteration
+      cloudtoptest=.true. ! reset cloudtop boolean for each new grid
+      do k=1,pver ! vertical layer iteration
+         if (cloudtoptest) then ! cloudtop test conditional
+            if (cldtau(i,k).gt.0.3 .and. cldtau(i,k).lt.3.0) then ! Cloud optical thickness range for which we trust obs
+               if (cld(i,k).gt.0.01 .and. (icimrst(i,k)+icwmrst(i,k)).gt.1.e-7_r8) then ! cld fract and mr conditional
+                  cloudtoptest=.false. ! cloudtop found for this grid, move to the next
+                  do t=1,nisotherms_mpc ! bin the following variables by isotherm
+                     if ((state_loc%t(i,k).gt.isotherms_mpc_bounds(1,t)).and.(state_loc%t(i,k).le.isotherms_mpc_bounds(2,t))) then
+                        ct_slf(i,t)             = sadliq_grid(i,k)/(sadliq_grid(i,k)+sadice_grid(i,k)) ! no need to weight, right? change var name
+                        ct_slfxcld_isotm(i,t)   = ct_slfxcld_isotm(i,t) + sadliq_grid(i,k)/(sadliq_grid(i,k)+sadice_grid(i,k)) * cld(i,k)
+                        ct_cld_isotm(i,t)       = ct_cld_isotm(i,t) + cld(i,k) ! why add and not just label the variable (only one iter)
+                     end if ! loose temperature conditional
+                  end do ! isotherm bin iteration
+               end if ! cld fract and mr conditional
+            end if ! Cloud optical thickness conditional
+         end if ! cloudtop test conditional
+      end do ! vertical layer iteration
+   end do ! grid box iteration 
+
+!##################################
+!## End Cloudtop SLF Calculation ##
+!##################################
 
    do i=1,ncol
       do pr=1,nprecipbins
@@ -3572,6 +3618,10 @@ subroutine micro_mg_cam_tend_pack(state, ptend, dtime, pbuf, mgncol, mgcols, mgr
    call outfld( 'BERGOXCLD_ISOTM',      bergoxcld_isotm,       pcols,lchnk )
    call outfld( 'BERGSOXCLD_ISOTM',     bergsoxcld_isotm,      pcols,lchnk )
    call outfld( 'CLD_ISOTM',            cld_isotm,             pcols,lchnk )
+
+   call outfld( 'CT_SLF',               ct_slf,                pcols,lchnk ) ! jks 
+   call outfld( 'CT_SLFXCLD_ISOTM',     ct_slfxcld_isotm,      pcols,lchnk ) ! jks normalized to cloud amount
+   call outfld( 'CT_CLD_ISOTM',         ct_cld_isotm,          pcols,lchnk ) ! jks
 
    call outfld( 'SLFXCLD_ISOTM_NONSIM',        slfxcld_isotm_nonsim,        pcols,lchnk )
    call outfld( 'SADLIQXCLD_ISOTM_NONSIM',     sadliqxcld_isotm_nonsim,     pcols,lchnk )
