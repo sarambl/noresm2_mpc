@@ -87,8 +87,8 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 # Set run time and restart variables within env_run.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
 ./xmlchange --file=env_run.xml STOP_OPTION=nmonth
-./xmlchange --file=env_run.xml STOP_N=15
-./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=06:59:00 --subgroup case.run
+./xmlchange --file=env_run.xml STOP_N=1
+./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:59:00 --subgroup case.run
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
 #./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '-phys cam5'
@@ -97,15 +97,14 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 ./xmlchange --file=env_mach_pes.xml -id NTASKS --val ${NUMNODES}
 ./xmlchange --file=env_mach_pes.xml -id NTASKS_ESP --val 1
 
+# OPTIONAL: Remove entrainment of ice.
+cp ${ModSource}/clubb_intr.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+
 # Move modified WBF process into SourceMods dir:
 cp ${ModSource}/micro_mg_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 cp ${ModSource}/micro_mg2_0.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 
 # Move modified INP nucleation process into SourceMods dir:
-# cp ${ModSource}/microp_aero.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
-#cp ${ModSource}/nucleate_ice_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
-# cp ${ModSource}/nucleate_ice.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
-# cp ${ModSource}/hetfrz_classnuc_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 cp ${ModSource}/hetfrz_classnuc_oslo.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 
 # Now use ponyfyer to set the values within the sourcemod files. Ex:
