@@ -1,5 +1,10 @@
-casename,run,slf_mult,inp_mult
+casename,run,wbf_mult,inp_mult
 manualhetrfrzoslo_inp10,1.0,1.0,10.0
 hetrfrzoslo_inp0.1,1.0,1.0,0.1
 hetrfrzoslo_func_inp0.1,1.0,1.0,0.1
 verbose_inp1,1.0,1.0,1.0
+hetrfrzoslo_dummies_inp10,1.0,1.0,10.0
+jolt_wbf_1_inp_1000,1.0,1.0,1000.0
+jolt_wbf_1_inp_0,1.0,1.0,0.0
+cttest15_wbf_1_inp_1,1.0,1.0,1.0
+entraintest_1_1,1.0,1.0,1.0

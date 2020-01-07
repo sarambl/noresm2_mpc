@@ -34,7 +34,7 @@ inp=${args[2]}          # inp multiplier
 
 models=("noresm-dev" "cesm" "noresm-dev-10072019")
 compsets=("NF2000climo" "N1850OCBDRDDMS")
-resolutions=("f19_tn14" "f10_f10_mg37")
+resolutions=("f19_tn14" "f10_f10_mg37", 'f19_g16')
 machines=('fram')
 projects=('nn9600k')
 
@@ -82,11 +82,16 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 # Set run time and restart variables within env_run.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
 ./xmlchange --file=env_run.xml STOP_OPTION=nmonth
-./xmlchange --file=env_run.xml STOP_N=2
+./xmlchange --file=env_run.xml STOP_N=1
 ./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:59:00 --subgroup case.run
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
 #./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '-phys cam5'
+
+### Nudging changes
+./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '--phys cam6 -chem trop_mam_oslo -offline_dyn' # To be nudged, could add '-cosp' here too
+./xmlchange -file env_build.xml -id CALENDAR -val 'GREGORIAN'
+./xmlchange -file env_run.xml -id RUN_STARTDATE -val '0001-01-01' # Make sure the startdate matches met_data_file
 
 # Modify the env_mach_pres.xml file here. If NUMTASKS is -4, it should get off the queue faster
 ./xmlchange --file=env_mach_pes.xml -id NTASKS --val ${NUMNODES}
@@ -131,11 +136,14 @@ fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUC
          'bc_num_scaled', 'dst1_num_scaled', 'dst3_num_scaled'
 TXT2
 
-# user_nl_cam additions related to nudging.
+# user_nl_cam additions related to nudging. Specify winds, set relax time, set first wind field file, path to all windfield files
+# The f16_g16 resolution only has ERA data from 1999-01-01 to 2003-07-14
 cat <<TXT3 >> user_nl_cam
 &metdata_nl
  met_nudge_only_uvps = .true.
  met_rlx_time = 6
+ met_data_file='/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/2000-01-01.nc'
+ met_filenames_list = '/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/fileList.txt'
 TXT3
 
 #nhtfrq(1) = 0

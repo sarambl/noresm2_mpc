@@ -1,4 +1,4 @@
-casename,run,slf_mult,inp_mult
+casename,run,wbf_mult,inp_mult
 wbf_1_inp_1,1.0,1.0,1.0
 wbf_1_inp_10,1.0,1.0,10.0
 wbf_1_inp_0.1,1.0,1.0,0.1
