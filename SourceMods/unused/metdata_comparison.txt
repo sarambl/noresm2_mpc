@@ -1,0 +1,86 @@
+54a55,57
+>   !++ IH
+>   public :: met_nudge_only_uvps
+>   !-- IH
+111a115,120
+>   !++ IH 
+>   logical  :: met_nudge_only_uvps = .true.   ! When true, only U, V and PS is nudged.
+>                                              ! When false, other variables can also be nudged
+>                                              ! (T, Q, TAUY, TAUX, SHFLX, QFLX, TS, SHOWH,...) 
+>   !-- IH
+> 
+120a130,131
+> !   16 Sep 2016  IH Karset Implemented ability to nudge only U, V and PS and change
+> !                the relaxation time
+273a285,287
+>         !++ IH: new option for uvps
+>         met_nudge_only_uvps, &
+>         !-- IH
+333a348,350
+>    !++ IH
+>    call mpibcast (met_nudge_only_uvps   ,1 ,mpilog, 0, mpicom )
+>    !-- IH
+359a377,379
+>        !++ IH 
+>        write(iulog,*)'Meteorological fields to nudge (u, v and ps, or more) : ', met_nudge_only_uvps
+>        !-- IH
+647a668,670
+>     !++ IH  don't nudge the stress and the heat fluxes if met_nudge_only_uvps is true
+>     if (.not. met_nudge_only_uvps) then
+>     !-- IH
+732a756,759
+>     !++ IH
+>     end if
+>     !-- IH
+> 
+791a819,821
+>     !++ IH don't nudge TS and SNOWH if met_nudge_only_uvps is true
+>     if (.not. met_nudge_only_uvps) then
+>     !-- IH
+798a829,831
+>     !++ IH
+>     end if
+>     !-- IH
+894c927
+<     
+---
+> 
+896c929,933
+<     
+---
+> 
+>     !++ IH don't nudge T and Q if met_nudge_only_uvps is true
+>     !      (I don't think Q is nudged by the defalut settings anyways since alpha is 1)
+>     if (.not. met_nudge_only_uvps) then
+>     !-- IH
+922a960,962
+>     !++ IH
+>     endif
+>     !-- IH
+2092c2132,2138
+<     has_ts = ierr==PIO_NOERR
+---
+>     !++IH
+>     if (.not. met_nudge_only_uvps) then
+>     !--IH
+>        has_ts = ierr==PIO_NOERR
+>     !++IH
+>     endif
+>     !--IH
+2095c2141,2147
+<     has_lhflx = ierr==PIO_NOERR
+---
+>     !++IH
+>     if (.not. met_nudge_only_uvps) then
+>     !--IH
+>        has_lhflx = ierr==PIO_NOERR
+>     !++IH
+>     endif
+>     !--IH
+2240a2293,2298
+>   !++ IH  
+>   !       The relaxation time between surface and met_rlx_bot is given by
+>   !       namelist input met_rlx (hours). This will decay exponentially between
+>   !       met_rlx_bot and met_rlx_top. 6h relaxation time when dt is 1800s gives
+>   !       met_rlx = 1800/(6*3600) = 0.8333.
+>   !-- IH
