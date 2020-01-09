@@ -17,9 +17,9 @@ function ponyfyer() {
     sed -i "s/${search}/${replace}/g" ${loc} ;
 }
 
-############
+################
 # SET INPUT ARGS
-############
+################
 
 args=("$@")
 CASENAME=${args[0]}  # uniquecasename, maybe add a timestamp in the python script
@@ -28,15 +28,24 @@ inp=${args[2]}          # inp multiplier
 
 #echo ${args[0]} ${args[1]} ${args[2]}
 
-############
+#####################
 # SET CASE PARAMETERS
-############
+#####################
 
 models=("noresm-dev" "cesm" "noresm-dev-10072019")
 compsets=("NF2000climo" "N1850OCBDRDDMS" "NFAMIPNUDGEPTAEROCLB")
 resolutions=("f19_tn14" "f10_f10_mg37", 'f19_g16')
 machines=('fram')
 projects=('nn9600k')
+
+########################
+# OPTIONAL MODIFICATIONS
+########################
+
+nudge_winds=false
+remove_entrained_ice=false
+
+## Build the case
 
 # Where ./create_case is called from: (do I need a tilde here for simplicity?)
 ModelRoot=/cluster/home/jonahks/p/jonahks/models/${models[0]}/cime/scripts
@@ -55,10 +64,6 @@ PROJECT=${projects[0]}
 MISC=--run-unsupported
 
 NUMNODES=-4 # How many nodes each component should run on
-# COMPSET=NF2000climo
-# RES=f19_tn14
-# MACH=fram
-# PROJECT=nn9600k
 
 echo ${CASEROOT}/${CASENAME} ${COMPSET} ${RES} ${MACH} ${PROJECT} $MISC
 
@@ -90,8 +95,21 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 # Makes sure it goes on the development queue
 ./xmlchange NTASKS=${NUMNODES},NTASKS_ESP=1 --file env_mach_pes.xml
 
-# OPTIONAL: Remove entrainment of ice.
-cp ${ModSource}/clubb_intr.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+# OPTIONAL: Remove entrainment of ice above -35C.
+if [ "$remove_entrained_ice" = true ] ; then
+    echo "Adding SourceMod to remove ice entrainment"
+    cp ${ModSource}/clubb_intr.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+fi
+
+# OPTIONAL: Nudge winds (pt. 1)
+if [ "$nudge_winds"] ; then
+    echo "Making modifications to nudge uv winds. Make sure pt. 2 files are correct."
+    ./xmlchange --append CAM_CONFIG_OPTS='--offline_dyn' --file env_build.xml
+    ./xmlchange CALENDAR='GREGORIAN' --file env_build.xml 
+    ./xmlchange RUN_STARTDATE='2000-01-01' --file env_run.xml
+    # Not sure if this is necessary
+    cp /cluster/home/jonahks/p/jonahks/models/noresm-dev/components/cam/src/NorESM/fv/metdata.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+fi
 
 # Move modified WBF process into SourceMods dir:
 cp ${ModSource}/micro_mg_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
@@ -129,6 +147,24 @@ fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUC
          'BCNIDEP', 'BCNICNT', 'BCNIIMM', 'NUMICE10s', 'NUMIMM10sDST', 'NUMIMM10sBC',
 TXT2
 
+# OPTIONAL: Nudge winds (pt. 2)
+# user_nl_cam additions related to nudging. Specify winds, set relax time, set first wind field file, path to all windfield files
+# The f16_g16 resolution only has ERA data from 1999-01-01 to 2003-07-14
+# Setting drydep_method resolves an error that arises when using the NF2000climo compset
+if [ "$nudge_winds"] ; then
+    cat <<TXT3 >> user_nl_cam
+    &metdata_nl
+    met_nudge_only_uvps = .true.
+    met_data_file='/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/2000-01-01.nc'
+    met_filenames_list = '/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/fileList3.txt'
+    met_rlx_top = 6
+    met_rlx_bot = 6
+    met_rlx_bot_top = 6
+    met_rlx_bot_bot = 6  
+    met_rlx_time = 6
+    drydep_method = 'xactive_atm'
+TXT3
+fi
 #nhtfrq(1) = 0
 
 exit 1
