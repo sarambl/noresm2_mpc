@@ -33,8 +33,8 @@ inp=${args[2]}          # inp multiplier
 ############
 
 models=("noresm-dev" "cesm" "noresm-dev-10072019")
-compsets=("NF2000climo" "N1850OCBDRDDMS")
-resolutions=("f19_tn14" "f10_f10_mg37")
+compsets=("NF2000climo" "N1850OCBDRDDMS" "NFAMIPNUDGEPTAEROCLB")
+resolutions=("f19_tn14" "f10_f10_mg37", 'f19_g16')
 machines=('fram')
 projects=('nn9600k')
 
@@ -45,12 +45,7 @@ ModelRoot=/cluster/home/jonahks/p/jonahks/models/${models[0]}/cime/scripts
 CASEROOT=/cluster/home/jonahks/p/jonahks/cases
 
 # Where FORTRAN files contains microphysics modifications are stored
-# May require future subdirectories
-#ModSource=/cluster/home/jonahks/sourcemods/wbf_slf
 ModSource=/cluster/home/jonahks/git_repos/noresm2_mpc/SourceMods
-
-# Case name, unique, could be configured as an input arg:
-# CASENAME=NF2000climo_reshere_initialtest
 
 # Set indices to select from arrays here
 COMPSET=${compsets[0]}
@@ -85,17 +80,15 @@ cd ${ModelRoot} # Move to appropriate directory
 cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 
 # Set run time and restart variables within env_run.xml
+./xmlchange STOP_OPTION='nmonth',STOP_N='15' --file env_run.xml
+./xmlchange JOB_WALLCLOCK_TIME=06:59:00 --file env_batch.xml --subgroup case.run
+./xmlchange --append CAM_CONFIG_OPTS='-cosp' --file env_build.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
-./xmlchange --file=env_run.xml STOP_OPTION=nmonth
-./xmlchange --file=env_run.xml STOP_N=1
-./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:59:00 --subgroup case.run
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
-#./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '-phys cam5'
 
-# Modify the env_mach_pres.xml file here. If NUMTASKS is -4, it should get off the queue faster
-./xmlchange --file=env_mach_pes.xml -id NTASKS --val ${NUMNODES}
-./xmlchange --file=env_mach_pes.xml -id NTASKS_ESP --val 1
+# Makes sure it goes on the development queue
+./xmlchange NTASKS=${NUMNODES},NTASKS_ESP=1 --file env_mach_pes.xml
 
 # OPTIONAL: Remove entrainment of ice.
 cp ${ModSource}/clubb_intr.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
@@ -109,17 +102,12 @@ cp ${ModSource}/hetfrz_classnuc_oslo.F90 /${CASEROOT}/${CASENAME}/SourceMods/src
 
 # Now use ponyfyer to set the values within the sourcemod files. Ex:
 mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90
-# nuc_i_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_cam.F90
 inp_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_oslo.F90
 
 ponyfyer 'wbf_tag = 1.' "wbf_tag = ${wbf}" ${mg2_path}
-# ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${nuc_i_path}
 ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${inp_path}
 
-#echo ${mg2_path} ${inp2} ${nuc_i_path}
-
 # exit 1
-# Will need to set these values in some manner now
 
 # Set up case, creating user_nl_* files
 ./case.setup

@@ -33,7 +33,7 @@ inp=${args[2]}          # inp multiplier
 ############
 
 models=("noresm-dev" "cesm" "noresm-dev-10072019")
-compsets=("NF2000climo" "N1850OCBDRDDMS")
+compsets=("NF2000climo" "N1850OCBDRDDMS" "NFAMIPNUDGEPTAEROCLB")
 resolutions=("f19_tn14" "f10_f10_mg37", 'f19_g16')
 machines=('fram')
 projects=('nn9600k')
@@ -45,11 +45,7 @@ ModelRoot=/cluster/home/jonahks/p/jonahks/models/${models[0]}/cime/scripts
 CASEROOT=/cluster/home/jonahks/p/jonahks/cases
 
 # Where FORTRAN files contains microphysics modifications are stored
-# May require future subdirectories
 ModSource=/cluster/home/jonahks/git_repos/noresm2_mpc/SourceMods
-
-# Case name, unique, could be configured as an input arg:
-# CASENAME=NF2000climo_reshere_initialtest
 
 # Set indices to select from arrays here
 COMPSET=${compsets[0]}
@@ -81,21 +77,21 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 
 # Set run time and restart variables within env_run.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
-./xmlchange --file=env_run.xml STOP_OPTION=nmonth
-./xmlchange --file=env_run.xml STOP_N=1
-./xmlchange --file=env_batch.xml JOB_WALLCLOCK_TIME=00:59:00 --subgroup case.run
+./xmlchange STOP_OPTION='nmonth',STOP_N='15' --file env_run.xml
+./xmlchange JOB_WALLCLOCK_TIME=06:59:00 --file env_batch.xml --subgroup case.run
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
-#./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '-phys cam5'
+./xmlchange --append CAM_CONFIG_OPTS='-cosp' --file env_build.xml
 
 ### Nudging changes
-./xmlchange -file env_build.xml -id CAM_CONFIG_OPTS -val '--phys cam6 -chem trop_mam_oslo -offline_dyn' # To be nudged, could add '-cosp' here too
-./xmlchange -file env_build.xml -id CALENDAR -val 'GREGORIAN'
-./xmlchange -file env_run.xml -id RUN_STARTDATE -val '0001-01-01' # Make sure the startdate matches met_data_file
+./xmlchange --append CAM_CONFIG_OPTS='--offline_dyn' --file env_build.xml
+./xmlchange CALENDAR='GREGORIAN' --file env_build.xml 
+./xmlchange RUN_STARTDATE='2000-01-01' --file env_run.xml
+# Not sure if this is necessary
+cp /cluster/home/jonahks/p/jonahks/models/noresm-dev/components/cam/src/NorESM/fv/metdata.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 
-# Modify the env_mach_pres.xml file here. If NUMTASKS is -4, it should get off the queue faster
-./xmlchange --file=env_mach_pes.xml -id NTASKS --val ${NUMNODES}
-./xmlchange --file=env_mach_pes.xml -id NTASKS_ESP --val 1
+# Makes sure it goes on the development queue
+./xmlchange NTASKS=${NUMNODES},NTASKS_ESP=1 --file env_mach_pes.xml
 
 # Move modified WBF process into SourceMods dir:
 cp ${ModSource}/micro_mg_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
@@ -106,16 +102,10 @@ cp ${ModSource}/hetfrz_classnuc_oslo.F90 /${CASEROOT}/${CASENAME}/SourceMods/src
 
 # Now use ponyfyer to set the values within the sourcemod files. Ex:
 mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90
-# nuc_i_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_cam.F90
 inp_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_oslo.F90
 
 ponyfyer 'wbf_tag = 1.' "wbf_tag = ${wbf}" ${mg2_path}
 ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${inp_path}
-
-#echo ${mg2_path} ${inp2} ${nuc_i_path}
-
-# exit 1
-# Will need to set these values in some manner now
 
 # Set up case, creating user_nl_* files
 ./case.setup
@@ -138,12 +128,18 @@ TXT2
 
 # user_nl_cam additions related to nudging. Specify winds, set relax time, set first wind field file, path to all windfield files
 # The f16_g16 resolution only has ERA data from 1999-01-01 to 2003-07-14
+# Setting drydep_method resolves an error that arises when using the NF2000climo compset
 cat <<TXT3 >> user_nl_cam
 &metdata_nl
  met_nudge_only_uvps = .true.
- met_rlx_time = 6
  met_data_file='/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/2000-01-01.nc'
- met_filenames_list = '/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/fileList.txt'
+ met_filenames_list = '/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/fileList3.txt'
+ met_rlx_top = 6
+ met_rlx_bot = 6
+ met_rlx_bot_top = 6
+ met_rlx_bot_bot = 6  
+ met_rlx_time = 6
+ drydep_method = 'xactive_atm'
 TXT3
 
 #nhtfrq(1) = 0

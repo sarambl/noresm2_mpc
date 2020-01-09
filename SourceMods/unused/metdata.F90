@@ -52,6 +52,9 @@ module metdata
   public :: met_rlx
   public :: met_fix_mass
   public :: met_srf_feedback
+  !++ IH
+  public :: met_nudge_only_uvps
+  !-- IH
 
   interface write_met_restart
      Module procedure write_met_restart_bin
@@ -109,6 +112,12 @@ module metdata
   ! radiation/albedo surface field fill value (where there is no sunlight) read in from input data file 
   real(r8) :: srf_fill_value
 
+  !++ IH 
+  logical  :: met_nudge_only_uvps = .true.   ! When true, only U, V and PS is nudged.
+                                             ! When false, other variables can also be nudged
+                                             ! (T, Q, TAUY, TAUX, SHFLX, QFLX, TS, SHOWH,...) 
+  !-- IH
+
 ! !REVISION HISTORY:
 !   31 Oct 2003  Francis Vitt     Creation
 !   05 Feb 2004  F Vitt   Removed reading/inperpolating PS for current timestep
@@ -118,6 +127,8 @@ module metdata
 !   14 Jul 2005  W Sawyer Removed pmgrid, spmd_dyn dependencies
 !   12 Apr 2006  W Sawyer Removed unneeded ghosting of met_us, met_vs
 !   08 Apr 2010  J Edwards Replaced serial netcdf calls with pio interface  
+!   16 Sep 2016  IH Karset Implemented ability to nudge only U, V and PS and change
+!                the relaxation time
 !
 ! EOP
 !----------------------------------------------------------------------- 
@@ -271,6 +282,9 @@ contains
         met_rlx_bot_top, &
         met_rlx_bot_bot, &
         met_rlx_time, &
+        !++ IH: new option for uvps
+        met_nudge_only_uvps, &
+        !-- IH
         met_fix_mass, &
         met_shflx_name, &
         met_shflx_factor, &
@@ -331,6 +345,9 @@ contains
    call mpibcast (met_srf_sst        ,1 ,mpilog, 0, mpicom )
    call mpibcast (met_srf_tau        ,1 ,mpilog, 0, mpicom )
    call mpibcast (met_nudge_temp     ,1 ,mpilog, 0, mpicom )
+   !++ IH
+   call mpibcast (met_nudge_only_uvps   ,1 ,mpilog, 0, mpicom )
+   !-- IH
 #endif
 
    if (masterproc) then
@@ -357,6 +374,9 @@ contains
        write(iulog,*)'Meteorological allow srf sst nudging : ', met_srf_sst
        write(iulog,*)'Meteorological allow srf tau nudging : ', met_srf_tau
        write(iulog,*)'Meteorological allow atm tempature nudging : ',met_nudge_temp
+       !++ IH 
+       write(iulog,*)'Meteorological fields to nudge (u, v and ps, or more) : ', met_nudge_only_uvps
+       !-- IH
     endif
 
  end subroutine metdata_readnl
@@ -645,6 +665,9 @@ contains
     real(r8) :: met_rlx_sfc(pcols)
     real(r8) :: lcl_rlx(pcols)    
 
+    !++ IH  don't nudge the stress and the heat fluxes if met_nudge_only_uvps is true
+    if (.not. met_nudge_only_uvps) then
+    !-- IH
     do c=begchunk,endchunk
        ncol = get_ncols_p(c)
 
@@ -730,6 +753,10 @@ contains
        end if
      end do                    ! Chunk loop
 
+    !++ IH
+    end if
+    !-- IH
+
     if (debug) then
        if (masterproc) then
           write(iulog,*)'METDATA   maxval(met_taux),minval(met_taux): ',maxval(met_taux),minval(met_taux)
@@ -789,6 +816,9 @@ contains
        call endrun('The meteorolgy input must have TS to run with met_srf_feedback set to FALSE')
     endif
 
+    !++ IH don't nudge TS and SNOWH if met_nudge_only_uvps is true
+    if (.not. met_nudge_only_uvps) then
+    !-- IH
     do c=begchunk,endchunk
        ncol = get_ncols_p(c)
        cam_in(c)%ts(:ncol)     = met_ts(:ncol,c)
@@ -796,6 +826,9 @@ contains
           cam_in(c)%snowhland(i) = met_snowh(i,c)*cam_in(c)%landfrac(i) * met_snowh_factor
        enddo
     end do ! Chunk loop
+    !++ IH
+    end if
+    !-- IH
 
     if (debug) then
        if (masterproc) then
@@ -891,9 +924,13 @@ contains
     real(r8):: qini(pcols,pver)   ! initial specific humidity
 
     real(r8) :: tmp(pcols,pver)
-    
+
     call t_startf('MET__GET_DYN2')
-    
+
+    !++ IH don't nudge T and Q if met_nudge_only_uvps is true
+    !      (I don't think Q is nudged by the defalut settings anyways since alpha is 1)
+    if (.not. met_nudge_only_uvps) then
+    !-- IH
     do c = begchunk, endchunk
        ncol = get_ncols_p(c)
        do k=1,pver
@@ -920,6 +957,9 @@ contains
        endif
 
     end do
+    !++ IH
+    endif
+    !-- IH
 
     if (debug) then
     if (masterproc) then
@@ -2089,10 +2129,22 @@ contains
     call pio_seterrorhandling(fileid, PIO_BCAST_ERROR)
 
     ierr = pio_inq_varid( fileid, 'TS', varid )
-    has_ts = ierr==PIO_NOERR
+    !++IH
+    if (.not. met_nudge_only_uvps) then
+    !--IH
+       has_ts = ierr==PIO_NOERR
+    !++IH
+    endif
+    !--IH
 
     ierr = pio_inq_varid( fileid, 'LHFLX', varid )
-    has_lhflx = ierr==PIO_NOERR
+    !++IH
+    if (.not. met_nudge_only_uvps) then
+    !--IH
+       has_lhflx = ierr==PIO_NOERR
+    !++IH
+    endif
+    !--IH
 
     call pio_seterrorhandling(fileid, PIO_INTERNAL_ERROR)
 
@@ -2238,6 +2290,12 @@ contains
 !-----------------------------------------------------------------------
 !-----------------------------------------------------------------------
   subroutine set_met_rlx( )
+  !++ IH  
+  !       The relaxation time between surface and met_rlx_bot is given by
+  !       namelist input met_rlx (hours). This will decay exponentially between
+  !       met_rlx_bot and met_rlx_top. 6h relaxation time when dt is 1800s gives
+  !       met_rlx = 1800/(6*3600) = 0.8333.
+  !-- IH
 
     use pmgrid, only: plev
     use hycoef, only: hypm, ps0
