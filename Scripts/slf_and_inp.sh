@@ -42,7 +42,7 @@ projects=('nn9600k')
 # OPTIONAL MODIFICATIONS
 ########################
 
-nudge_winds=false
+nudge_winds=true
 remove_entrained_ice=false
 
 ## Build the case
@@ -87,7 +87,7 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 # Set run time and restart variables within env_run.xml
 ./xmlchange STOP_OPTION='nmonth',STOP_N='15' --file env_run.xml
 ./xmlchange JOB_WALLCLOCK_TIME=06:59:00 --file env_batch.xml --subgroup case.run
-./xmlchange --append CAM_CONFIG_OPTS='-cosp' --file env_build.xml
+#./xmlchange --append CAM_CONFIG_OPTS='-cosp' --file env_build.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
@@ -96,13 +96,13 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 ./xmlchange NTASKS=${NUMNODES},NTASKS_ESP=1 --file env_mach_pes.xml
 
 # OPTIONAL: Remove entrainment of ice above -35C.
-if [ "$remove_entrained_ice" = true ] ; then
+if [ $remove_entrained_ice = true ] ; then
     echo "Adding SourceMod to remove ice entrainment"
     cp ${ModSource}/clubb_intr.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 fi
 
 # OPTIONAL: Nudge winds (pt. 1)
-if [ "$nudge_winds"] ; then
+if [ $nudge_winds = true ] ; then
     echo "Making modifications to nudge uv winds. Make sure pt. 2 files are correct."
     ./xmlchange --append CAM_CONFIG_OPTS='--offline_dyn' --file env_build.xml
     ./xmlchange CALENDAR='GREGORIAN' --file env_build.xml 
@@ -151,19 +151,21 @@ TXT2
 # user_nl_cam additions related to nudging. Specify winds, set relax time, set first wind field file, path to all windfield files
 # The f16_g16 resolution only has ERA data from 1999-01-01 to 2003-07-14
 # Setting drydep_method resolves an error that arises when using the NF2000climo compset
-if [ "$nudge_winds"] ; then
-    cat <<TXT3 >> user_nl_cam
-    &metdata_nl
-    met_nudge_only_uvps = .true.
-    met_data_file='/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/2000-01-01.nc'
-    met_filenames_list = '/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/fileList3.txt'
-    met_rlx_top = 6
-    met_rlx_bot = 6
-    met_rlx_bot_top = 6
-    met_rlx_bot_bot = 6  
-    met_rlx_time = 6
-    drydep_method = 'xactive_atm'
+if [ $nudge_winds = true ] ; then # 
+
+cat <<TXT3 >> user_nl_cam
+&metdata_nl
+ met_nudge_only_uvps = .true.
+ met_data_file= '/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/2000-01-01.nc'
+ met_filenames_list = '/cluster/shared/noresm/inputdata/noresm-only/inputForNudging/ERA_f19_g16/fileList3.txt'
+ met_rlx_top = 6
+ met_rlx_bot = 6
+ met_rlx_bot_top = 6
+ met_rlx_bot_bot = 6  
+ met_rlx_time = 6
+ drydep_method = 'xactive_atm'
 TXT3
+
 fi
 #nhtfrq(1) = 0
 
