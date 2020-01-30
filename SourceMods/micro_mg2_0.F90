@@ -881,7 +881,9 @@ subroutine micro_mg_tend ( &
   real(r8) :: ifrac
 
   real(r8) :: wbfeffmult(mgncol,nlev) ! wbf efficiency multiplier !zsm, jks
+  real(r8) :: inpeffmult(mgncol,nlev) ! inp efficiency multiplier !zsm, jks
   real(r8) :: wbf_tag                 ! Arctic multiplier value   !jks 
+  real(r8) :: inp_tag                 ! Arctic multiplier value   !jks 
 
   !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1092,7 +1094,9 @@ subroutine micro_mg_tend ( &
   cmeout = 0._r8
 
   wbfeffmult = 1._r8 !zsm, jks
+  inpeffmult = 1._r8 !zsm, jks
   wbf_tag = 1._r8    !jks this line is to be modified with a bash script
+  inp_tag = 1._r8    !jks this line is to be modified with a bash script
 
   precip_frac = mincld
 
@@ -1381,9 +1385,13 @@ subroutine micro_mg_tend ( &
 
      endif
 
-     ! Double WBF efficiency if in arctic !zsm !191004 jks added unique tag for wbf
+     ! Modify WBF efficiency if in arctic !zsm !191004 jks added unique tag for wbf
      do i=1,mgncol
-        if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) wbfeffmult(i,k) = wbf_tag
+!        if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) wbfeffmult(i,k) = wbf_tag
+        if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then 
+           inpeffmult(i,k) = inp_tag
+           wbfeffmult(i,k) = wbf_tag
+        end if
      end do
 
      !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1550,13 +1558,13 @@ subroutine micro_mg_tend ( &
            mi0l = max(mi0l_min, mi0l)
 
            where (qcic(1:mgncol,k) >= qsmall)
-              nnuccc(:,k) = frzimm(:,k)*1.0e6_r8/rho(:,k)
+              nnuccc(:,k) = frzimm(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
               mnuccc(:,k) = nnuccc(:,k)*mi0l
 
-              nnucct(:,k) = frzcnt(:,k)*1.0e6_r8/rho(:,k)
+              nnucct(:,k) = frzcnt(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
               mnucct(:,k) = nnucct(:,k)*mi0l
 
-              nnudep(:,k) = frzdep(:,k)*1.0e6_r8/rho(:,k)
+              nnudep(:,k) = frzdep(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
               mnudep(:,k) = nnudep(:,k)*mi0
            elsewhere
               nnuccc(:,k) = 0._r8
@@ -1746,9 +1754,11 @@ subroutine micro_mg_tend ( &
         mnuccri(i,k)=0._r8
         nnuccri(i,k)=0._r8
 
+        ! Zachary thinks this is causing problems zsm, jks
         if (do_cldice) then
 
            ! freezing of rain to produce ice if mean rain size is smaller than Dcs
+         !   if (lamr(i,k) > qsmall .and. 1._r8/lamr(i,k) < Dcs .and. t(i,k).gt.235.15_r8) then ! jks
            if (lamr(i,k) > qsmall .and. 1._r8/lamr(i,k) < Dcs) then
               mnuccri(i,k)=mnuccr(i,k)
               nnuccri(i,k)=nnuccr(i,k)
@@ -2378,6 +2388,10 @@ subroutine micro_mg_tend ( &
            falouti  = 0._r8
            faloutni = 0._r8
         end if
+
+        ! jks trying to quickly remove ice sedimentation
+      !  falouti = 0._r8 
+      !  faloutni = 0._r8
 
         ! top of model
 

@@ -44,7 +44,7 @@ projects=('nn9600k')
 
 nudge_winds=true
 remove_entrained_ice=false
-
+record_mar_input=false
 ## Build the case
 
 # Where ./create_case is called from: (do I need a tilde here for simplicity?)
@@ -85,8 +85,8 @@ cd ${ModelRoot} # Move to appropriate directory
 cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 
 # Set run time and restart variables within env_run.xml
-./xmlchange STOP_OPTION='nmonth',STOP_N='15' --file env_run.xml
-./xmlchange JOB_WALLCLOCK_TIME=06:59:00 --file env_batch.xml --subgroup case.run
+./xmlchange STOP_OPTION='nmonth',STOP_N='1' --file env_run.xml
+./xmlchange JOB_WALLCLOCK_TIME=00:59:00 --file env_batch.xml --subgroup case.run
 #./xmlchange --append CAM_CONFIG_OPTS='-cosp' --file env_build.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
@@ -123,6 +123,7 @@ mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90
 inp_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_oslo.F90
 
 ponyfyer 'wbf_tag = 1.' "wbf_tag = ${wbf}" ${mg2_path}
+#ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${mg2_path} # for the alternate INP mods
 ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${inp_path}
 
 # exit 1
@@ -145,6 +146,8 @@ fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUC
          'bc_num_scaled', 'dst1_num_scaled', 'dst3_num_scaled' ,
          'NIMIX_IMM', 'NIMIX_CNT', 'NIMIX_DEP', 'DSTNIDEP', 'DSTNICNT', 'DSTNIIMM',
          'BCNIDEP', 'BCNICNT', 'BCNIIMM', 'NUMICE10s', 'NUMIMM10sDST', 'NUMIMM10sBC',
+         'MPDI2V', 'MPDI2W','QISEDTEN', 'NIMIX_HET', 'NIMIX_CNT', 'NIMIX_IMM', 'NIMIX_DEP',
+         'MNUDEPO', 'NNUCCTO', 'NNUCCCO', 'NNUDEPO', 'NIHOMOO','HOMOO'
 TXT2
 
 # OPTIONAL: Nudge winds (pt. 2)
@@ -167,7 +170,25 @@ cat <<TXT3 >> user_nl_cam
 TXT3
 
 fi
-#nhtfrq(1) = 0
+
+if [ $record_mar_input = true ] ; then # Output additional history files with forcing input for MAR (Stefan)
+
+# Does Stefan want instantaneous or average values?? instantaneous is better
+cat <<MAR_CAM >> user_nl_cam
+fincl2 = 'T:I','PS:I','Q:I','U:I','V:I'
+nhtfr(2) = -6
+
+fincl3 = 'SST:I'
+nhtfr(3) = -24
+MAR_CAM
+
+cat <<MAR_CICE >> user_nl_cice
+fincl3 = 'f_aice:I'
+nhtfr(3) = -24
+MAR_CICE
+
+fi
+# missing sea ice concentration (likely related to a different module)
 
 exit 1
 

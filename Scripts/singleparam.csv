@@ -8,3 +8,16 @@ jolt_wbf_1_inp_1000,1.0,1.0,1000.0
 jolt_wbf_1_inp_0,1.0,1.0,0.0
 cttest15_wbf_1_inp_1,1.0,1.0,1.0
 entraintest_1_1,1.0,1.0,1.0
+nudgetest_1_1,1.0,1.0,1.0
+nudge_wbf_1_inp_1000,1.0,1.0,1000.0
+nudgetest_wbf_1_inp_1000,1.0,1.0,1000.0
+nudge_wbf_1_inp_0,1.0,1.0,0.0
+nudged_no_sed_1_1,1.0,1.0,1.0
+nofreezingrain_1_1,1.0,1.0,1.0
+midtempfreezingrain_1_1,1.0,1.0,1.0
+frzrtvarsm1_wbf_1_inp_1,1.0,1.0,1.0
+frzrtvarsm15_wbf_1_inp_100,1.0,1.0,100.0
+frzrtvarsm15_wbf_1_inp_1,1.0,1.0,1.0
+altINPm1_wbf_1_inp_1,1.0,1.0,1.0
+altINPm1_wbf_1_inp_100,1.0,1.0,100.0
+noice_wbf_1_inp_0,1.0,1.0,0.0
