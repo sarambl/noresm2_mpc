@@ -21,3 +21,11 @@ frzrtvarsm15_wbf_1_inp_1,1.0,1.0,1.0
 altINPm1_wbf_1_inp_1,1.0,1.0,1.0
 altINPm1_wbf_1_inp_100,1.0,1.0,100.0
 noice_wbf_1_inp_0,1.0,1.0,0.0
+nimaxmod_wbf_1_inp_1,1.0,1.0,1.0
+nimaxmod_wbf_1_inp_100,1.0,1.0,100.0
+inpcheck_wbf_1_inp_10,1.0,1.0,10.0
+wbfcheck_wbf_0.1_inp_1,1.0,0.1,1.0
+icenucmod_wbf_1_inp_1,1.0,1.0,1.0
+icenucmod2_wbf_1_inp_1,1.0,1.0,1.0
+icenucmod_wbf_1_inp_10,1.0,1.0,10.0
+continuetestnudged_wbf_1_inp_1,1.0,1.0,1.0

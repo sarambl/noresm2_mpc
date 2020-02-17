@@ -517,7 +517,7 @@ subroutine micro_mg_tend ( &
   real(r8), intent(out) :: effc_fn(mgncol,nlev)      ! droplet effective radius, assuming nc = 1.e8 kg-1
   real(r8), intent(out) :: effi(mgncol,nlev)         ! cloud ice effective radius (micron)
   real(r8), intent(out) :: sadice(mgncol,nlev)       ! cloud ice surface area density (cm2/cm3)
-  real(r8), intent(out) :: sadliq(mgncol,nlev)       ! cloud ice surface area density (cm2/cm3) !zsm, jks
+  real(r8), intent(out) :: sadliq(mgncol,nlev)       ! cloud liquid surface area density (cm2/cm3) !zsm, jks
   real(r8), intent(out) :: sadsnow(mgncol,nlev)      ! cloud snow surface area density (cm2/cm3)
   real(r8), intent(out) :: prect(mgncol)             ! surface precip rate (m/s)
   real(r8), intent(out) :: preci(mgncol)             ! cloud ice/snow precip rate (m/s)
@@ -882,7 +882,9 @@ subroutine micro_mg_tend ( &
 
   real(r8) :: wbfeffmult(mgncol,nlev) ! wbf efficiency multiplier !zsm, jks
   real(r8) :: inpeffmult(mgncol,nlev) ! inp efficiency multiplier !zsm, jks
-  real(r8) :: wbf_tag                 ! Arctic multiplier value   !jks 
+  real(r8) :: icenucmult(mgncol,nlev) ! inp efficiency multiplier !zsm, jks
+  real(r8) :: wbf_tag                 ! Arctic WBF multiplier value   !jks 
+  real(r8) :: icenuc_tag                 ! Arctic Ice Nuclei multiplier value   !jks 
   real(r8) :: inp_tag                 ! Arctic multiplier value   !jks 
 
   !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -1095,7 +1097,9 @@ subroutine micro_mg_tend ( &
 
   wbfeffmult = 1._r8 !zsm, jks
   inpeffmult = 1._r8 !zsm, jks
+  icenucmult = 1._r8 !zsm, jks
   wbf_tag = 1._r8    !jks this line is to be modified with a bash script
+  icenuc_tag = 1._r8    !jks this line is to be modified with a bash script
   inp_tag = 1._r8    !jks this line is to be modified with a bash script
 
   precip_frac = mincld
@@ -1179,6 +1183,15 @@ subroutine micro_mg_tend ( &
 
   nfice = 0._r8
 
+   ! Calculate scalings jks 02072020
+   do i=1,mgncol
+      if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then 
+         inpeffmult(i,:) = inp_tag ! this should be removed at some point
+         wbfeffmult(i,:) = wbf_tag
+         icenucmult(i,:) = icenuc_tag
+      end if
+   end do
+
   !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
   ! droplet activation
   ! get provisional droplet number after activation. This is used for
@@ -1198,7 +1211,8 @@ subroutine micro_mg_tend ( &
   end where
 
   where (t < icenuct)
-     ncai = naai*rho
+   !   ncai = naai*rho
+     ncai = (naai*icenucmult)*rho      ! jks
   elsewhere
      ncai = 0._r8
   end where
@@ -1220,9 +1234,11 @@ subroutine micro_mg_tend ( &
 
         !if NAAI > 0. then set numice = naai (as before)
         !note: this is gridbox averaged
-        nnuccd = (naai-ni/icldm)/mtime*icldm
+      !   nnuccd = (naai-ni/icldm)/mtime*icldm
+        nnuccd = ((naai*icenucmult)-ni/icldm)/mtime*icldm ! jks scaled INPs
         nnuccd = max(nnuccd,0._r8)
-        nimax = naai*icldm
+      !   nimax = naai*icldm 
+        nimax = (naai*icenucmult)*icldm ! jks scale INPs
 
         !Calc mass of new particles using new crystal mass...
         !also this will be multiplied by mtime as nnuccd is...
@@ -1386,13 +1402,13 @@ subroutine micro_mg_tend ( &
      endif
 
      ! Modify WBF efficiency if in arctic !zsm !191004 jks added unique tag for wbf
-     do i=1,mgncol
-!        if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) wbfeffmult(i,k) = wbf_tag
-        if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then 
-           inpeffmult(i,k) = inp_tag
-           wbfeffmult(i,k) = wbf_tag
-        end if
-     end do
+!      do i=1,mgncol
+! !        if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) wbfeffmult(i,k) = wbf_tag
+!         if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then 
+!            inpeffmult(i,k) = inp_tag
+!            wbfeffmult(i,k) = wbf_tag
+!         end if
+!      end do
 
      !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      ! get size distribution parameters based on in-cloud cloud water
@@ -1597,6 +1613,9 @@ subroutine micro_mg_tend ( &
 
      if (do_cldice) then
         call secondary_ice_production(t(:,k), psacws(:,k), msacwi(:,k), nsacwi(:,k), mgncol)
+      !   where (nsacwi(:,k)*deltat.gt.1.e6_r8) ! jks numice troubleshooting ice number
+      !      nsacwi(:,k) = 1.e6_r8/deltat ! jks limit ice multiplier, I dont like this 013120
+      !   end where
      else
         nsacwi(:,k) = 0.0_r8
         msacwi(:,k) = 0.0_r8
@@ -2108,9 +2127,10 @@ subroutine micro_mg_tend ( &
         ! note that currently mtime = deltat
         !================================================================
 
+        ! jks, could add temperature dependence here
         if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k)) then
           nitncons(i,k) = nitncons(i,k) + nitend(i,k)-max(0._r8,(nimax(i,k)-ni(i,k))/deltat) !AL
-           nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat)
+           nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat) 
         end if
 
      end do

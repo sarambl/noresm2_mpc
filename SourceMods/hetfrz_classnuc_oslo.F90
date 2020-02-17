@@ -273,7 +273,7 @@ subroutine hetfrz_classnuc_oslo_init(mincld_in)
       call add_default('bc_num', 1, ' ')
       call add_default('dst1_num', 1, ' ')
       call add_default('dst3_num', 1, ' ')
-      call add_default('bc_num_scaled', 1, ' ') !jks, make sure these field are included to verify
+      call add_default('bc_num_scaled', 1, ' ') !jks, make sure these fields are included to verify
       call add_default('dst1_num_scaled', 1, ' ') !jks
       call add_default('dst3_num_scaled', 1, ' ') !jks
       call add_default('bcc_num', 1, ' ')

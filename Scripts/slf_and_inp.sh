@@ -122,9 +122,11 @@ cp ${ModSource}/hetfrz_classnuc_oslo.F90 /${CASEROOT}/${CASENAME}/SourceMods/src
 mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90
 inp_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_oslo.F90
 
-ponyfyer 'wbf_tag = 1.' "wbf_tag = ${wbf}" ${mg2_path}
+ponyfyer 'wbf_tag = 1.' "wbf_tag = ${wbf}" ${mg2_path}  # wbf modifier
+ponyfyer 'icenuc_tag = 1.' "icenuc_tag = ${inp}" ${mg2_path} # ice nuclei (naai) modified
+
+#ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${inp_path} # aerosol conc. modifier
 #ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${mg2_path} # for the alternate INP mods
-ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${inp_path}
 
 # exit 1
 
@@ -144,7 +146,7 @@ fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUC
          'NUMICE10s', 'NUMICE10sDST', 'NUMICE10sBC',
          'dc_num', 'dst1_num', 'dst3_num', 'bc_c1_num', 'dst_c1_num', 'dst_c3_num',
          'bc_num_scaled', 'dst1_num_scaled', 'dst3_num_scaled' ,
-         'NIMIX_IMM', 'NIMIX_CNT', 'NIMIX_DEP', 'DSTNIDEP', 'DSTNICNT', 'DSTNIIMM',
+         'DSTNIDEP', 'DSTNICNT', 'DSTNIIMM',
          'BCNIDEP', 'BCNICNT', 'BCNIIMM', 'NUMICE10s', 'NUMIMM10sDST', 'NUMIMM10sBC',
          'MPDI2V', 'MPDI2W','QISEDTEN', 'NIMIX_HET', 'NIMIX_CNT', 'NIMIX_IMM', 'NIMIX_DEP',
          'MNUDEPO', 'NNUCCTO', 'NNUCCCO', 'NNUDEPO', 'NIHOMOO','HOMOO'

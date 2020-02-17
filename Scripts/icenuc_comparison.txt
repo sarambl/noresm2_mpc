@@ -1,0 +1,95 @@
+diff 20200207_145043_singleparam_icenucmod_wbf_1_inp_1/SourceMods/src.cam/hetfrz_classnuc_oslo.F90 20200128_142110_singleparam_frzrtvarsm1_wbf_1_inp_1/SourceMods/src.cam/hetfrz_classnuc_oslo.F90
+276c276
+<       call add_default('bc_num_scaled', 1, ' ') !jks, make sure these fields are included to verify
+---
+>       call add_default('bc_num_scaled', 1, ' ') !jks, make sure these field are included to verify
+diff 20200207_145043_singleparam_icenucmod_wbf_1_inp_1/SourceMods/src.cam/micro_mg2_0.F90 20200128_142110_singleparam_frzrtvarsm1_wbf_1_inp_1/SourceMods/src.cam/micro_mg2_0.F90
+520c520
+<   real(r8), intent(out) :: sadliq(mgncol,nlev)       ! cloud liquid surface area density (cm2/cm3) !zsm, jks
+---
+>   real(r8), intent(out) :: sadliq(mgncol,nlev)       ! cloud ice surface area density (cm2/cm3) !zsm, jks
+884,888c884
+<   real(r8) :: inpeffmult(mgncol,nlev) ! inp efficiency multiplier !zsm, jks
+<   real(r8) :: icenucmult(mgncol,nlev) ! inp efficiency multiplier !zsm, jks
+<   real(r8) :: wbf_tag                 ! Arctic WBF multiplier value   !jks 
+<   real(r8) :: icenuc_tag                 ! Arctic Ice Nuclei multiplier value   !jks 
+<   real(r8) :: inp_tag                 ! Arctic multiplier value   !jks 
+---
+>   real(r8) :: wbf_tag                 ! Arctic multiplier value   !jks 
+1099,1100d1094
+<   inpeffmult = 1._r8 !zsm, jks
+<   icenucmult = 1._r8 !zsm, jks
+1102,1103d1095
+<   icenuc_tag = 1._r8    !jks this line is to be modified with a bash script
+<   inp_tag = 1._r8    !jks this line is to be modified with a bash script
+1186,1194d1177
+<    ! Calculate scalings jks 02072020
+<    do i=1,mgncol
+<       if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then 
+<          inpeffmult(i,:) = inp_tag ! this should be removed at some point
+<          wbfeffmult(i,:) = wbf_tag
+<          icenucmult(i,:) = icenuc_tag
+<       end if
+<    end do
+< 
+1214,1215c1197
+<    !   ncai = naai*rho
+<      ncai = (naai*icenucmult)*rho      ! jks
+---
+>      ncai = naai*rho
+1237,1238c1219
+<       !   nnuccd = (naai-ni/icldm)/mtime*icldm
+<         nnuccd = ((naai*icenucmult)-ni/icldm)/mtime*icldm ! jks scaled INPs
+---
+>         nnuccd = (naai-ni/icldm)/mtime*icldm
+1240,1241c1221
+<       !   nimax = naai*icldm 
+<         nimax = (naai*icenucmult)*icldm ! jks scale INPs
+---
+>         nimax = naai*icldm
+1405,1411c1385,1387
+< !      do i=1,mgncol
+< ! !        if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) wbfeffmult(i,k) = wbf_tag
+< !         if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then 
+< !            inpeffmult(i,k) = inp_tag
+< !            wbfeffmult(i,k) = wbf_tag
+< !         end if
+< !      end do
+---
+>      do i=1,mgncol
+>         if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) wbfeffmult(i,k) = wbf_tag
+>      end do
+1577c1553
+<               nnuccc(:,k) = frzimm(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
+---
+>               nnuccc(:,k) = frzimm(:,k)*1.0e6_r8/rho(:,k) ! multiply here jks
+1580c1556
+<               nnucct(:,k) = frzcnt(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
+---
+>               nnucct(:,k) = frzcnt(:,k)*1.0e6_r8/rho(:,k)
+1583c1559
+<               nnudep(:,k) = frzdep(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
+---
+>               nnudep(:,k) = frzdep(:,k)*1.0e6_r8/rho(:,k)
+1616,1618d1591
+<       !   where (nsacwi(:,k)*deltat.gt.1.e6_r8) ! jks numice troubleshooting ice number
+<       !      nsacwi(:,k) = 1.e6_r8/deltat ! jks limit ice multiplier, I dont like this 013120
+<       !   end where
+1780,1781c1753,1754
+<          !   if (lamr(i,k) > qsmall .and. 1._r8/lamr(i,k) < Dcs .and. t(i,k).gt.235.15_r8) then ! jks
+<            if (lamr(i,k) > qsmall .and. 1._r8/lamr(i,k) < Dcs) then
+---
+>            if (lamr(i,k) > qsmall .and. 1._r8/lamr(i,k) < Dcs .and. t(i,k).gt.235.15_r8) then ! jks
+> !           if (lamr(i,k) > qsmall .and. 1._r8/lamr(i,k) < Dcs) then
+2130d2102
+<         ! jks
+2133c2105
+<            nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat) 
+---
+>            nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat)
+2413,2414c2385,2386
+<       !  falouti = 0._r8 
+<       !  faloutni = 0._r8
+---
+> !        falouti = 0._r8 
+> !        faloutni = 0._r8
