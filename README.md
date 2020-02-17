@@ -11,4 +11,4 @@ This folder includes the modified F90 files that will be modified and plugged in
 Operation:
 Ideally, anyone wishing to use this repository can clone it into a remote HPC, modify the paths and model parameters in the bash script in /Scripts, and then run it!
 
-
+This branch has a different micro_mg2_0.F90 file that modifies the output of the hetfrz_classnuc scheme instead of the input. It also has lines to remove sedimentation through fallout and some weird fix related to freezing rain from cirrus clouds (from Zachary).
