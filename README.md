@@ -11,4 +11,4 @@ This folder includes the modified F90 files that will be modified and plugged in
 Operation:
 Ideally, anyone wishing to use this repository can clone it into a remote HPC, modify the paths and model parameters in the bash script in /Scripts, and then run it!
 
-
+This branch contains the original SourceMods which scale the WBF process and the aerosol concentrations used to calculated heterogeneous freezing rates. The cloudtop variable is included in model output as well.
