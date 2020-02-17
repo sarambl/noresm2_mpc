@@ -11,4 +11,4 @@ This folder includes the modified F90 files that will be modified and plugged in
 Operation:
 Ideally, anyone wishing to use this repository can clone it into a remote HPC, modify the paths and model parameters in the bash script in /Scripts, and then run it!
 
-
+This branch modifies three important variables within micro_mg2_0.F90. They are the WBF multiplier, an aerosol multiplier for heterogeneous freezing rates, and a INP multiplier for the naai variable. Modifications for other changes are present but commented out.
