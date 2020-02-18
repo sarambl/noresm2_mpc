@@ -123,10 +123,7 @@ mg2_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/micro_mg2_0.F90
 inp_path=/${CASEROOT}/${CASENAME}/SourceMods/src.cam/hetfrz_classnuc_oslo.F90
 
 ponyfyer 'wbf_tag = 1.' "wbf_tag = ${wbf}" ${mg2_path}  # wbf modifier
-ponyfyer 'icenuc_tag = 1.' "icenuc_tag = ${inp}" ${mg2_path} # ice nuclei (naai) modified
-
-#ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${inp_path} # aerosol conc. modifier
-#ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${mg2_path} # for the alternate INP mods
+ponyfyer 'inp_tag = 1.' "inp_tag = ${inp}" ${inp_path} # aerosol conc. modifier
 
 # exit 1
 
