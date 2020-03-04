@@ -1556,13 +1556,13 @@ subroutine micro_mg_tend ( &
            mi0l = max(mi0l_min, mi0l)
 
            where (qcic(1:mgncol,k) >= qsmall)
-              nnuccc(:,k) = frzimm(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
+              nnuccc(:,k) = frzimm(:,k)*1.0e6_r8/rho(:,k)
               mnuccc(:,k) = nnuccc(:,k)*mi0l
 
-              nnucct(:,k) = frzcnt(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
+              nnucct(:,k) = frzcnt(:,k)*1.0e6_r8/rho(:,k)
               mnucct(:,k) = nnucct(:,k)*mi0l
 
-              nnudep(:,k) = frzdep(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
+              nnudep(:,k) = frzdep(:,k)*1.0e6_r8/rho(:,k)
               mnudep(:,k) = nnudep(:,k)*mi0
            elsewhere
               nnuccc(:,k) = 0._r8
@@ -2110,10 +2110,12 @@ subroutine micro_mg_tend ( &
         !================================================================
 
         ! jks added temperatre dependence on the nimax limiting process to avoid unphysical responses in mixed-phase clouds
+      !  if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k)) then
         if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k).and.t(i,k).lt.235.15_r8) then
-      !   if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k)) then
-          nitncons(i,k) = nitncons(i,k) + nitend(i,k)-max(0._r8,(nimax(i,k)-ni(i,k))/deltat) !AL
-           nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat) 
+           if (mgrlats(i)*180._r8/3.14159_r8.lt.+66.66667_r8) then ! jks only ignore NIMAX in the Arctic
+              nitncons(i,k) = nitncons(i,k) + nitend(i,k)-max(0._r8,(nimax(i,k)-ni(i,k))/deltat) !AL
+              nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat)
+           end if 
         end if
 
      end do

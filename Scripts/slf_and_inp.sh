@@ -2,7 +2,8 @@
 # ^specify bash as interpreter
 
 # Copied from slf_only.sh by Jonah Shaw 19/11/05
-# Testing bash scripts offline to learn functionality
+# Useful documentation on where to make model adjustments:
+#   http://www.cesm.ucar.edu/events/tutorials/2018/files/Practical4-intro-hannay.pdf
 
 ############
 # FUNCTIONS
@@ -85,8 +86,9 @@ cd ${ModelRoot} # Move to appropriate directory
 cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 
 # Set run time and restart variables within env_run.xml
-./xmlchange STOP_OPTION='nmonth',STOP_N='1' --file env_run.xml
-./xmlchange JOB_WALLCLOCK_TIME=00:59:00 --file env_batch.xml --subgroup case.run
+./xmlchange STOP_OPTION='nmonth',STOP_N='15' --file env_run.xml
+./xmlchange JOB_WALLCLOCK_TIME=06:59:00 --file env_batch.xml --subgroup case.run
+./xmlchange JOB_QUEUE='devel' --file env_batch.xml --subgroup case.run # wallclock must be 29:59, and nodes 4
 #./xmlchange --append CAM_CONFIG_OPTS='-cosp' --file env_build.xml
 #./xmlchange --file=env_run.xml RESUBMIT=3
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
@@ -110,6 +112,11 @@ if [ $nudge_winds = true ] ; then
     # Not sure if this is necessary
     cp /cluster/home/jonahks/p/jonahks/models/noresm-dev/components/cam/src/NorESM/fv/metdata.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 fi
+
+# ./case.setup
+# Sets up case, creating user_nl_* files. 
+# namelists can be modified here, or after ./case.build
+# SourceMods are made here.
 
 # Move modified WBF process into SourceMods dir:
 cp ${ModSource}/micro_mg_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
