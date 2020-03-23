@@ -56,7 +56,8 @@ ModelRoot=/cluster/home/jonahks/p/jonahks/models/${models[0]}/cime/scripts
 CASEROOT=/cluster/home/jonahks/p/jonahks/cases
 
 # Where FORTRAN files contains microphysics modifications are stored
-ModSource=/cluster/home/jonahks/git_repos/noresm2_mpc/SourceMods
+#ModSource=/cluster/home/jonahks/git_repos/noresm2_mpc/SourceMods
+ModSource=/cluster/home/jonahks/git_repos/mpcSourceMods
 
 # Set indices to select from arrays here
 COMPSET=${compsets[0]}
