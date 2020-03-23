@@ -1196,7 +1196,6 @@ subroutine micro_mg_tend ( &
 
   where (t < icenuct)
      ncai = naai*rho
-   !   ncai = (naai*icenucmult)*rho      ! jks
   elsewhere
      ncai = 0._r8
   end where
@@ -1219,10 +1218,8 @@ subroutine micro_mg_tend ( &
         !if NAAI > 0. then set numice = naai (as before)
         !note: this is gridbox averaged
         nnuccd = (naai-ni/icldm)/mtime*icldm
-      !   nnuccd = ((naai*icenucmult)-ni/icldm)/mtime*icldm ! jks scaled INPs
         nnuccd = max(nnuccd,0._r8)
         nimax = naai*icldm 
-      !   nimax = (naai*icenucmult)*icldm ! jks scale INPs
 
         !Calc mass of new particles using new crystal mass...
         !also this will be multiplied by mtime as nnuccd is...

@@ -37,7 +37,7 @@ models=("noresm-dev" "cesm" "noresm-dev-10072019")
 compsets=("NF2000climo" "N1850OCBDRDDMS" "NFAMIPNUDGEPTAEROCLB")
 resolutions=("f19_tn14" "f10_f10_mg37", 'f19_g16')
 machines=('fram')
-projects=('nn9600k')
+projects=('nn9600k' 'nn9252k')
 
 ########################
 # OPTIONAL MODIFICATIONS
@@ -46,6 +46,7 @@ projects=('nn9600k')
 nudge_winds=true
 remove_entrained_ice=false
 record_mar_input=false
+devel_run=false # standard or devel
 ## Build the case
 
 # Where ./create_case is called from: (do I need a tilde here for simplicity?)
@@ -61,10 +62,10 @@ ModSource=/cluster/home/jonahks/git_repos/noresm2_mpc/SourceMods
 COMPSET=${compsets[0]}
 RES=${resolutions[0]}
 MACH=${machines[0]}
-PROJECT=${projects[0]}
+PROJECT=${projects[1]}
 MISC=--run-unsupported
 
-NUMNODES=-4 # How many nodes each component should run on
+NUMNODES=-16 # How many nodes each component should run on
 
 echo ${CASEROOT}/${CASENAME} ${COMPSET} ${RES} ${MACH} ${PROJECT} $MISC
 
@@ -86,16 +87,23 @@ cd ${ModelRoot} # Move to appropriate directory
 cd ${CASEROOT}/${CASENAME} # Move to the case's dir
 
 # Set run time and restart variables within env_run.xml
-./xmlchange STOP_OPTION='nmonth',STOP_N='15' --file env_run.xml
-./xmlchange JOB_WALLCLOCK_TIME=06:59:00 --file env_batch.xml --subgroup case.run
-./xmlchange JOB_QUEUE='devel' --file env_batch.xml --subgroup case.run # wallclock must be 29:59, and nodes 4
-#./xmlchange --append CAM_CONFIG_OPTS='-cosp' --file env_build.xml
+if [devel_run = true] ; then
+    ./xmlchange STOP_OPTION='nmonth',STOP_N='1' --file env_run.xml
+    ./xmlchange JOB_WALLCLOCK_TIME=00:29:59 --file env_batch.xml --subgroup case.run
+    ./xmlchange NTASKS=-4,NTASKS_ESP=1 --file env_mach_pes.xml
+    ./xmlchange JOB_QUEUE='devel' --file env_batch.xml
+else
+    ./xmlchange STOP_OPTION='nmonth',STOP_N='15' --file env_run.xml
+    ./xmlchange JOB_WALLCLOCK_TIME=11:59:59 --file env_batch.xml --subgroup case.run
+    ./xmlchange NTASKS=-16,NTASKS_ESP=1 --file env_mach_pes.xml # arbitrary
+fi
+
+# ./xmlchange --append CAM_CONFIG_OPTS='-cosp' --file env_build.xml
+
 #./xmlchange --file=env_run.xml RESUBMIT=3
 # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 #./xmlchange --file=env_run.xml REST_N=5
 
-# Makes sure it goes on the development queue
-./xmlchange NTASKS=${NUMNODES},NTASKS_ESP=1 --file env_mach_pes.xml
 
 # OPTIONAL: Remove entrainment of ice above -35C.
 if [ $remove_entrained_ice = true ] ; then

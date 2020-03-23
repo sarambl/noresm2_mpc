@@ -37,7 +37,7 @@ models=("noresm-dev" "cesm" "noresm-dev-10072019")
 compsets=("NF2000climo" "N1850OCBDRDDMS" "NFAMIPNUDGEPTAEROCLB")
 resolutions=("f19_tn14" "f10_f10_mg37", 'f19_g16')
 machines=('fram')
-projects=('nn9600k')
+projects=('nn9600k' 'nn9252k')
 
 ########################
 # OPTIONAL MODIFICATIONS
@@ -56,13 +56,14 @@ CASEROOT=/cluster/home/jonahks/p/jonahks/cases
 
 # Where FORTRAN files contains microphysics modifications are stored
 ModSource=/cluster/home/jonahks/git_repos/noresm2_mpc/SourceMods
-AltModSource=/cluster/home/jonahks/git_repos/micro_mg_mods/original_NorESM_files
+OrgModSource=/cluster/home/jonahks/git_repos/micro_mg_mods/original_NorESM_files
+AltModSource=/cluster/home/jonahks/git_repos/micro_mg_mods/continue_run_dev
 
 # Set indices to select from arrays here
 COMPSET=${compsets[0]}
 RES=${resolutions[0]}
 MACH=${machines[0]}
-PROJECT=${projects[0]}
+PROJECT=${projects[1]}
 MISC=--run-unsupported
 
 NUMNODES=-4 # How many nodes each component should run on
@@ -88,15 +89,17 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir # maybe issues here?
 
 # # Set run time and restart variables within env_run.xml
 # ./xmlchange STOP_OPTION='nmonth',STOP_N='15' --file env_run.xml
-./xmlchange JOB_WALLCLOCK_TIME=0:29:59 --file env_batch.xml --subgroup case.run
-# ./xmlchange JOB_QUEUE='devel' --file env_batch.xml --subgroup case.run # wallclock must be 29:59, and nodes 4
+./xmlchange JOB_WALLCLOCK_TIME=0:29:59 --file env_batch.xml #--subgroup case.run
+# ./xmlchange JOB_QUEUE='devel' --file env_batch.xml #--subgroup case.run # wallclock must be 29:59, and nodes 4
+# ./xmlchange DEBUG=TRUE --file env_build.xml # caused the model to crash during archiving
 # #./xmlchange --append CAM_CONFIG_OPTS='-cosp' --file env_build.xml
 # #./xmlchange --file=env_run.xml RESUBMIT=3
 # # ./xmlchange --file=env_run.xml REST_OPTION=nyears
 # #./xmlchange --file=env_run.xml REST_N=5
 
 # # Makes sure it goes on the development queue
-./xmlchange NTASKS=${NUMNODES},NTASKS_ESP=1 --file env_mach_pes.xml
+# ./xmlchange NTASKS=${NUMNODES},NTASKS_ESP=1 --file env_mach_pes.xml
+./xmlchange NTASKS=-4,NTASKS_ESP=1 --file env_mach_pes.xml
 
 # # OPTIONAL: Remove entrainment of ice above -35C.
 # if [ $remove_entrained_ice = true ] ; then
@@ -118,7 +121,7 @@ cd ${CASEROOT}/${CASENAME} # Move to the case's dir # maybe issues here?
 
 # # Move modified WBF process into SourceMods dir:
 cp ${AltModSource}/micro_mg_cam.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
-cp ${AltModSource}/micro_mg2_0.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
+cp ${ModSource}/micro_mg2_0.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 # cp ${AltModSource}/hetfrz_classnuc_oslo.F90 /${CASEROOT}/${CASENAME}/SourceMods/src.cam
 
 # Move modified WBF process into SourceMods dir:
@@ -147,6 +150,10 @@ cp ${ModSource}/hetfrz_classnuc_oslo.F90 /${CASEROOT}/${CASENAME}/SourceMods/src
 # # , 'SLFXCLD_ISOTM', 'SADLIQXCLD_ISOTM', 'SADICEXCLD_ISOTM', 'BERGOXCLD_ISOTM',
 # # 'BERGSOXCLD_ISOTM', 'CLD_ISOTM', 'CLDTAU', 'CLD_SLF', 'CLD_ISOTM_SLF',
 
+# cat <<CONTINUE_TXT >> user_nl_cam
+# fincl2 = 'SLFXCLD_ISOTM', 'CLD_ISOTM', 'CT_SLFXCLD_ISOTM', 'CT_CLD_ISOTM'
+# nhtfrq(2) = 0
+# CONTINUE_TXT
 
 # cat <<TXT2 >> user_nl_cam
 # fincl1 = 'BERGO', 'BERGSO', 'MNUCCTO', 'MNUCCRO', 'MNUCCCO', 'MNUCCDOhet', 'MNUCCDO'
