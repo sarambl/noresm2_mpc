@@ -881,11 +881,7 @@ subroutine micro_mg_tend ( &
   real(r8) :: ifrac
 
   real(r8) :: wbfeffmult(mgncol,nlev) ! wbf efficiency multiplier !zsm, jks
-  real(r8) :: inpeffmult(mgncol,nlev) ! inp efficiency multiplier !zsm, jks
-  real(r8) :: icenucmult(mgncol,nlev) ! inp efficiency multiplier !zsm, jks
   real(r8) :: wbf_tag                 ! Arctic WBF multiplier value   !jks 
-  real(r8) :: icenuc_tag                 ! Arctic Ice Nuclei multiplier value   !jks 
-  real(r8) :: inp_tag                 ! Arctic multiplier value   !jks 
 
   !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
@@ -1096,11 +1092,7 @@ subroutine micro_mg_tend ( &
   cmeout = 0._r8
 
   wbfeffmult = 1._r8 !zsm, jks
-  inpeffmult = 1._r8 !zsm, jks
-  icenucmult = 1._r8 !zsm, jks
   wbf_tag = 1._r8    !jks this line is to be modified with a bash script
-  icenuc_tag = 1._r8    !jks this line is to be modified with a bash script
-  inp_tag = 1._r8    !jks this line is to be modified with a bash script
 
   precip_frac = mincld
 
@@ -1183,14 +1175,6 @@ subroutine micro_mg_tend ( &
 
   nfice = 0._r8
 
-   ! Calculate scalings jks 02072020
-   do i=1,mgncol
-      if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then 
-         inpeffmult(i,:) = inp_tag ! this should be removed at some point
-         wbfeffmult(i,:) = wbf_tag
-         icenucmult(i,:) = icenuc_tag
-      end if
-   end do
 
   !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
   ! droplet activation
@@ -1211,8 +1195,7 @@ subroutine micro_mg_tend ( &
   end where
 
   where (t < icenuct)
-   !   ncai = naai*rho
-     ncai = (naai*icenucmult)*rho      ! jks
+     ncai = naai*rho
   elsewhere
      ncai = 0._r8
   end where
@@ -1234,11 +1217,9 @@ subroutine micro_mg_tend ( &
 
         !if NAAI > 0. then set numice = naai (as before)
         !note: this is gridbox averaged
-      !   nnuccd = (naai-ni/icldm)/mtime*icldm
-        nnuccd = ((naai*icenucmult)-ni/icldm)/mtime*icldm ! jks scaled INPs
+        nnuccd = (naai-ni/icldm)/mtime*icldm
         nnuccd = max(nnuccd,0._r8)
-      !   nimax = naai*icldm 
-        nimax = (naai*icenucmult)*icldm ! jks scale INPs
+        nimax = naai*icldm 
 
         !Calc mass of new particles using new crystal mass...
         !also this will be multiplied by mtime as nnuccd is...
@@ -1402,13 +1383,11 @@ subroutine micro_mg_tend ( &
      endif
 
      ! Modify WBF efficiency if in arctic !zsm !191004 jks added unique tag for wbf
-!      do i=1,mgncol
-! !        if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) wbfeffmult(i,k) = wbf_tag
-!         if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then 
-!            inpeffmult(i,k) = inp_tag
-!            wbfeffmult(i,k) = wbf_tag
-!         end if
-!      end do
+     do i=1,mgncol
+        if (mgrlats(i)*180._r8/3.14159_r8.gt.+66.66667_r8) then 
+           wbfeffmult(i,k) = wbf_tag
+        end if
+     end do
 
      !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
      ! get size distribution parameters based on in-cloud cloud water
@@ -1574,13 +1553,13 @@ subroutine micro_mg_tend ( &
            mi0l = max(mi0l_min, mi0l)
 
            where (qcic(1:mgncol,k) >= qsmall)
-              nnuccc(:,k) = frzimm(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
+              nnuccc(:,k) = frzimm(:,k)*1.0e6_r8/rho(:,k)
               mnuccc(:,k) = nnuccc(:,k)*mi0l
 
-              nnucct(:,k) = frzcnt(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
+              nnucct(:,k) = frzcnt(:,k)*1.0e6_r8/rho(:,k)
               mnucct(:,k) = nnucct(:,k)*mi0l
 
-              nnudep(:,k) = frzdep(:,k)*1.0e6_r8/rho(:,k)!*inpeffmult(:,k) ! jks, alternate INP scaling modification
+              nnudep(:,k) = frzdep(:,k)*1.0e6_r8/rho(:,k)
               mnudep(:,k) = nnudep(:,k)*mi0
            elsewhere
               nnuccc(:,k) = 0._r8
@@ -1613,9 +1592,9 @@ subroutine micro_mg_tend ( &
 
      if (do_cldice) then
         call secondary_ice_production(t(:,k), psacws(:,k), msacwi(:,k), nsacwi(:,k), mgncol)
-      !   where (nsacwi(:,k)*deltat.gt.1.e6_r8) ! jks numice troubleshooting ice number
-      !      nsacwi(:,k) = 1.e6_r8/deltat ! jks limit ice multiplier, I dont like this 013120
-      !   end where
+        where (nsacwi(:,k)*deltat.gt.1.e6_r8) ! jks limit ni contributions from secondary ice processes to 1000 (1/m3/s)
+           nsacwi(:,k) = 1.e6_r8/deltat !
+        end where
      else
         nsacwi(:,k) = 0.0_r8
         msacwi(:,k) = 0.0_r8
@@ -2127,10 +2106,13 @@ subroutine micro_mg_tend ( &
         ! note that currently mtime = deltat
         !================================================================
 
-        ! jks, could add temperature dependence here
+        ! jks added temperature dependence on the nimax limiting process to avoid unphysical responses in mixed-phase clouds
+      !  if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k)) then
         if (do_cldice .and. nitend(i,k).gt.0._r8.and.ni(i,k)+nitend(i,k)*deltat.gt.nimax(i,k)) then
-          nitncons(i,k) = nitncons(i,k) + nitend(i,k)-max(0._r8,(nimax(i,k)-ni(i,k))/deltat) !AL
-           nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat) 
+           if (mgrlats(i)*180._r8/3.14159_r8.lt.+66.66667_r8 .or. t(i,k).lt.235.15_r8) then ! jks only ignore NIMAX in the Arctic for clouds T>-38C
+              nitncons(i,k) = nitncons(i,k) + nitend(i,k)-max(0._r8,(nimax(i,k)-ni(i,k))/deltat) !AL
+              nitend(i,k)=max(0._r8,(nimax(i,k)-ni(i,k))/deltat)
+           end if 
         end if
 
      end do
